@@ -1,0 +1,53 @@
+# Configuração do pipeline de mineração de métricas DORA (Lab03).
+# Execução: python -m pipeline --config config.yaml
+# O token do GitHub NUNCA vai aqui: ele é lido da variável de ambiente GITHUB_TOKEN.
+
+# Janela de observação de 12 meses (seção 3). Datas em UTC, ambas inclusivas.
+janela:
+  inicio: "2025-10-01"
+  fim: "2026-09-30"
+
+# Seleção de repositórios candidatos (seção 4).
+# A busca do GitHub retorna no máximo 1.000 resultados por consulta, então ela é
+# fatiada em faixas de estrelas. Use null como limite superior para "sem teto".
+selecao:
+  faixas_estrelas:
+    - [1000, 2000]
+    - [2000, 5000]
+    - [5000, 10000]
+    - [10000, 50000]
+    - [50000, null]
+  # Quantos repositórios devem restar na amostra final (S01: 100, S02: >= 300).
+  tamanho_amostra: 100
+
+# Critério mínimo de inclusão, contado dentro da janela (seção 3).
+criterios_inclusao:
+  min_releases: 5
+  min_workflow_runs: 50
+
+# Classificação de workflow runs pelo campo `conclusion` (seção 3).
+# Qualquer valor fora dessas duas listas (cancelled, skipped, neutral,
+# action_required, stale, vazio...) é ignorado.
+workflow_runs:
+  evento: push
+  conclusoes_sucesso: [success]
+  conclusoes_falha: [failure, timed_out, startup_failure]
+
+metricas:
+  # Uma release seguida por uma corretiva em até N dias é considerada falha (RQ 03 b).
+  janela_release_corretiva_dias: 7
+
+coleta:
+  # Respostas da API são salvas aqui para permitir retomada sem repetir chamadas.
+  cache_dir: cache
+  max_tentativas: 6
+  backoff_inicial_segundos: 1
+  timeout_segundos: 30
+
+validacao_manual:
+  semente: 42
+  n_repositorios: 60
+  releases_por_repositorio: 5
+
+saida:
+  dir: dados

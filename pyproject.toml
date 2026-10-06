@@ -1,0 +1,6 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.coverage.run]
+# As etapas só orquestram I/O; a cobertura mínima de 80% vale para as funções de cálculo.
+omit = ["*/etapa.py"]

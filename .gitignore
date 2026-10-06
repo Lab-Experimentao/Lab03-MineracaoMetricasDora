@@ -1,0 +1,36 @@
+# Segredos: o token do GitHub vem de GITHUB_TOKEN e nunca é commitado
+.env
+.env.*
+!.env.example
+*.token
+token.txt
+secrets.*
+
+# Cache da API e dados brutos (regeráveis pelo pipeline)
+cache/
+dados/brutos/
+*.sqlite
+*.sqlite3
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Testes e cobertura
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Notebooks e editores
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
