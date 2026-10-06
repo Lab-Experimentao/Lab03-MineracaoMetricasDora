@@ -1,10 +1,4 @@
-"""Cache em disco (SQLite) das respostas da API do GitHub.
-
-Cada resposta fica numa linha, identificada pela URL canônica da requisição
-(com os parâmetros da query ordenados). Cada gravação é confirmada na hora, então
-uma interrupção (rate limit, queda de rede, Ctrl+C) nunca perde o que já foi baixado
-e, ao rodar de novo, as chamadas já feitas são lidas daqui em vez da API.
-"""
+"""Cache em SQLite das respostas da API, com commit a cada gravação para permitir retomada."""
 
 from __future__ import annotations
 
@@ -28,7 +22,7 @@ CREATE TABLE IF NOT EXISTS respostas (
 
 
 def url_canonica(url: str) -> str:
-    """Normaliza a URL para servir de chave: parâmetros da query em ordem alfabética."""
+    """Chave do cache: URL com os parâmetros da query ordenados."""
     partes = urlsplit(url)
     query = urlencode(sorted(parse_qsl(partes.query, keep_blank_values=True)))
     return urlunsplit((partes.scheme, partes.netloc.lower(), partes.path, query, ""))
@@ -42,8 +36,6 @@ class RespostaCacheada:
 
 
 class CacheRespostas:
-    """Guarda respostas da API num banco SQLite em `caminho`."""
-
     def __init__(self, caminho: str | Path) -> None:
         caminho = Path(caminho)
         caminho.parent.mkdir(parents=True, exist_ok=True)

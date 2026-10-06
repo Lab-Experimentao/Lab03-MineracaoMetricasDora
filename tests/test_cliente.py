@@ -19,7 +19,7 @@ def resposta(status=200, corpo=None, headers=None):
 
 
 class SessaoFalsa:
-    """Devolve as respostas roteirizadas, em ordem, e registra as URLs pedidas."""
+    """Devolve as respostas em ordem e registra as URLs pedidas."""
 
     def __init__(self, respostas):
         self.respostas = list(respostas)
@@ -70,9 +70,6 @@ def criar_cliente(cache, relogio, respostas, **kwargs):
     return cliente, sessao
 
 
-# ---------------------------------------------------------------- cabeçalho Link
-
-
 def test_ler_cabecalho_link():
     valor = (
         f'<{API}/repos/o/r/releases?page=2>; rel="next", '
@@ -84,9 +81,6 @@ def test_ler_cabecalho_link():
     }
     assert ler_cabecalho_link(None) == {}
     assert ler_cabecalho_link("") == {}
-
-
-# ---------------------------------------------------------------- cache e retomada
 
 
 def test_url_canonica_ordena_parametros():
@@ -116,7 +110,7 @@ def test_retomada_entre_execucoes(tmp_path, relogio):
     cliente1.obter("/repos/o/r/releases")
     cliente1.fechar()
 
-    # Nova execução: nenhuma resposta roteirizada, então qualquer chamada à API falharia.
+    # Sem respostas roteirizadas: qualquer chamada à API falharia.
     cache2 = CacheRespostas(caminho)
     cliente2, sessao2 = criar_cliente(cache2, relogio, [])
     assert cliente2.obter("/repos/o/r/releases").dados == [1, 2]
@@ -158,9 +152,6 @@ def test_resposta_sem_corpo(cache, relogio):
     assert cliente.obter("/repos/o/r/contributors").do_cache
 
 
-# ---------------------------------------------------------------- paginação
-
-
 def test_paginacao_segue_link_next(cache, relogio):
     pag2 = f"{API}/repos/o/r/releases?per_page=2&page=2"
     pag3 = f"{API}/repos/o/r/releases?per_page=2&page=3"
@@ -172,7 +163,7 @@ def test_paginacao_segue_link_next(cache, relogio):
     assert list(cliente.paginar("/repos/o/r/releases", {"per_page": 2})) == [1, 2, 3, 4, 5]
     assert sessao.urls[1:] == [pag2, pag3]
 
-    # Reexecução: tudo vem do cache, inclusive os links entre as páginas.
+    # Na reexecução, páginas e links vêm do cache.
     assert list(cliente.paginar("/repos/o/r/releases", {"per_page": 2})) == [1, 2, 3, 4, 5]
     assert len(sessao.urls) == 3
 
@@ -203,9 +194,6 @@ def test_link_last_disponivel_para_contar_paginas(cache, relogio):
     assert r.links["last"] == ultima
 
 
-# ---------------------------------------------------------------- backoff em 5xx
-
-
 def test_5xx_repetido_com_backoff_exponencial(cache, relogio):
     cliente, sessao = criar_cliente(cache, relogio, [
         resposta(502), resposta(503), resposta(500), resposta(corpo={"ok": True}),
@@ -234,9 +222,6 @@ def test_erro_de_rede_tambem_tem_backoff(cache, relogio):
     assert relogio.esperas == [1, 2]
 
 
-# ---------------------------------------------------------------- rate limit
-
-
 def cota(restantes, reset, recurso="core"):
     return {
         "X-RateLimit-Remaining": str(restantes),
@@ -254,9 +239,9 @@ def test_pausa_quando_cota_acaba(cache, relogio):
     ])
     cliente.obter("/a")
     cliente.obter("/b")
-    assert relogio.esperas == []  # ainda havia cota para /b
+    assert relogio.esperas == []
     cliente.obter("/c")
-    assert relogio.esperas == [pytest.approx(602)]  # até o reset + margem
+    assert relogio.esperas == [pytest.approx(602)]  # reset + margem
 
 
 def test_403_por_cota_esgotada_espera_e_repete(cache, relogio):
@@ -265,7 +250,7 @@ def test_403_por_cota_esgotada_espera_e_repete(cache, relogio):
         resposta(403, {"message": "API rate limit exceeded"}, cota(0, reset)),
         resposta(corpo={"ok": True}, headers=cota(4999, reset + 3600)),
     ], max_tentativas=1)
-    # Esperar a cota não conta como tentativa: mesmo com max_tentativas=1 funciona.
+    # Esperar a cota não gasta tentativa.
     assert cliente.obter("/x").dados == {"ok": True}
     assert relogio.esperas == [pytest.approx(122)]
     assert len(sessao.urls) == 2
@@ -279,7 +264,7 @@ def test_cotas_separadas_por_recurso(cache, relogio):
         resposta(corpo={"items": []}, headers=cota(29, reset + 60, "search")),
     ])
     cliente.obter("/search/repositories", {"q": "stars:>1000"})
-    cliente.obter("/repos/o/r/releases")  # cota core intacta: não espera
+    cliente.obter("/repos/o/r/releases")
     assert relogio.esperas == []
     cliente.obter("/search/repositories", {"q": "stars:1000..2000"})
     assert relogio.esperas == [pytest.approx(32)]
@@ -322,9 +307,6 @@ def test_403_que_nao_e_rate_limit_falha_direto(cache, relogio):
     assert erro.value.status == 403
     assert relogio.esperas == []
     assert len(sessao.urls) == 1
-
-
-# ---------------------------------------------------------------- integração com o config
 
 
 def test_de_config_cria_cache_na_pasta_configurada(tmp_path):

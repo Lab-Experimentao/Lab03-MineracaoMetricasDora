@@ -1,11 +1,4 @@
-"""Cliente HTTP próprio para a API REST do GitHub.
-
-Responsabilidades (seção 7 do enunciado):
-- cache em disco de cada resposta, para retomar a coleta sem repetir chamadas;
-- pausa automática quando a cota acaba, lendo X-RateLimit-Remaining/X-RateLimit-Reset;
-- repetição de erros temporários (5xx, falhas de rede) com backoff exponencial;
-- paginação seguindo o cabeçalho Link (rel="next").
-"""
+"""Cliente HTTP da API REST do GitHub com cache, rate limit, backoff e paginação."""
 
 from __future__ import annotations
 
@@ -27,13 +20,11 @@ log = logging.getLogger(__name__)
 API_URL = "https://api.github.com"
 VERSAO_API = "2022-11-28"
 
-# Respostas de erro definitivas: guardadas no cache para não repetir a chamada
-# na retomada (ex.: compare de uma tag apagada devolve 404; repositório vazio, 409).
+# Erros definitivos (ex.: compare de tag apagada) ficam em cache para não serem repetidos.
 STATUS_ERRO_CACHEAVEL = frozenset({404, 409, 410, 451})
 
-# Folga somada ao horário de renovação da cota, para não acordar um segundo antes.
 MARGEM_RESET_SEGUNDOS = 2.0
-# Sem Retry-After, o GitHub recomenda esperar ao menos 1 minuto no limite secundário.
+# Espera recomendada pelo GitHub no limite secundário sem Retry-After.
 ESPERA_MINIMA_LIMITE_SECUNDARIO = 60.0
 ESPERA_MAXIMA_BACKOFF = 300.0
 
@@ -41,15 +32,13 @@ _PADRAO_LINK = re.compile(r'<([^>]+)>\s*;\s*rel="([^"]+)"')
 
 
 def ler_cabecalho_link(valor: str | None) -> dict[str, str]:
-    """Converte o cabeçalho Link em {rel: url}, ex.: {"next": ..., "last": ...}."""
+    """Converte o cabeçalho Link em {rel: url}."""
     if not valor:
         return {}
     return {rel: url for url, rel in _PADRAO_LINK.findall(valor)}
 
 
 class ErroAPI(Exception):
-    """Falha ao acessar a API do GitHub."""
-
     def __init__(self, mensagem: str, status: int | None = None, url: str | None = None) -> None:
         super().__init__(mensagem)
         self.status = status
@@ -71,10 +60,7 @@ class _Cota:
 
 
 class ClienteGitHub:
-    """Faz GETs na API do GitHub com cache, rate limit, backoff e paginação.
-
-    `sessao`, `dormir` e `relogio` podem ser substituídos nos testes.
-    """
+    """`sessao`, `dormir` e `relogio` são injetáveis para os testes."""
 
     def __init__(
         self,
@@ -103,7 +89,7 @@ class ClienteGitHub:
             "X-GitHub-Api-Version": VERSAO_API,
             "User-Agent": "lab03-mineracao-metricas-dora",
         })
-        # Cota conhecida por recurso da API ("core", "search", ...): as cotas são separadas.
+        # Cada recurso da API ("core", "search") tem cota própria.
         self._cotas: dict[str, _Cota] = {}
         self.chamadas_api = 0
         self.acertos_cache = 0
@@ -129,10 +115,7 @@ class ClienteGitHub:
     def __exit__(self, *_: object) -> None:
         self.fechar()
 
-    # ------------------------------------------------------------------ API pública
-
     def montar_url(self, caminho: str, params: dict[str, Any] | None = None) -> str:
-        """Junta caminho relativo (ex.: "/repos/o/r/releases") ou URL absoluta e parâmetros."""
         url = urljoin(self.url_base, caminho.lstrip("/")) if not caminho.startswith("http") else caminho
         if params:
             separador = "&" if urlsplit(url).query else "?"
@@ -142,7 +125,7 @@ class ClienteGitHub:
     def obter(
         self, caminho: str, params: dict[str, Any] | None = None, *, usar_cache: bool = True
     ) -> Resposta:
-        """GET de uma única página. Lança ErroAPI para respostas de erro."""
+        """GET de uma página; lança ErroAPI se o status for de erro."""
         url = self.montar_url(caminho, params)
         if usar_cache:
             cacheada = self.cache.obter(url)
@@ -163,7 +146,7 @@ class ClienteGitHub:
     def paginas(
         self, caminho: str, params: dict[str, Any] | None = None, *, max_paginas: int | None = None
     ) -> Iterator[Resposta]:
-        """Percorre todas as páginas seguindo o cabeçalho Link (rel="next")."""
+        """Percorre as páginas seguindo o rel="next" do cabeçalho Link."""
         url: str | None = self.montar_url(caminho, params)
         lidas = 0
         while url is not None and (max_paginas is None or lidas < max_paginas):
@@ -182,9 +165,7 @@ class ClienteGitHub:
     ) -> Iterator[Any]:
         """Itera os itens de todas as páginas.
 
-        Endpoints que devolvem uma lista (releases, tags) dispensam `chave_itens`;
-        os que devolvem um objeto indicam onde está a lista: "items" (search),
-        "workflow_runs", "workflows", "commits" (compare).
+        `chave_itens` indica a lista quando o corpo é um objeto ("items", "workflow_runs", "commits").
         """
         for pagina in self.paginas(caminho, params, max_paginas=max_paginas):
             if pagina.dados is None:
@@ -193,10 +174,8 @@ class ClienteGitHub:
             yield from itens
 
     def rate_limit(self) -> dict[str, Any]:
-        """Situação atual da cota (GET /rate_limit não consome cota e nunca vem do cache)."""
+        """Cota atual; não consome cota nem usa o cache."""
         return self.obter("/rate_limit", usar_cache=False).dados
-
-    # ------------------------------------------------------------------ internos
 
     def _requisitar(self, url: str) -> requests.Response:
         recurso = _recurso_da_url(url)
@@ -215,7 +194,7 @@ class ClienteGitHub:
             status = resposta.status_code
 
             if status in (403, 429) and resposta.headers.get("X-RateLimit-Remaining") == "0":
-                # Limite primário: espera a cota renovar; não conta como tentativa.
+                # Cota esgotada: espera a renovação sem gastar tentativa.
                 tentativa -= 1
                 continue
             if status in (403, 429) and _e_limite_secundario(resposta):
@@ -235,8 +214,7 @@ class ClienteGitHub:
         cota = self._cotas.get(recurso)
         if cota is None or cota.restantes > 0:
             return
-        # Mesmo com o reset no passado (relógio local adiantado), espera a margem
-        # para não martelar a API num laço de respostas 403.
+        # A margem evita um laço de 403 se o relógio local estiver adiantado.
         espera = max(cota.reset_epoch - self._relogio(), 0) + MARGEM_RESET_SEGUNDOS
         del self._cotas[recurso]
         log.warning(
