@@ -52,6 +52,9 @@ class Janela:
 @dataclass(frozen=True)
 class Selecao:
     faixas_estrelas: tuple[tuple[int, int | None], ...]
+    filtros_busca: str
+    arquivo_candidatos: Path
+    semente: int
     tamanho_amostra: int
 
 
@@ -203,6 +206,9 @@ def carregar_config(caminho: str | Path) -> Config:
         janela=_janela(dados),
         selecao=Selecao(
             faixas_estrelas=_faixas_estrelas(selecao),
+            filtros_busca=str(selecao.get("filtros_busca") or "").strip(),
+            arquivo_candidatos=base / str(_campo(selecao, "selecao", "arquivo_candidatos")),
+            semente=int(_campo(selecao, "selecao", "semente")),
             tamanho_amostra=_inteiro_positivo(selecao, "selecao", "tamanho_amostra"),
         ),
         criterios_inclusao=CriteriosInclusao(

@@ -1,0 +1,6 @@
+faixa,consulta,disponiveis,obtidos,buscado_em
+1000..2000,stars:1000..2000 fork:false archived:false,29078,1000,2026-10-06
+2000..5000,stars:2000..5000 fork:false archived:false,19115,1000,2026-10-06
+5000..10000,stars:5000..10000 fork:false archived:false,6557,1000,2026-10-06
+10000..50000,stars:10000..50000 fork:false archived:false,4822,1000,2026-10-06
+>=50000,stars:>=50000 fork:false archived:false,491,491,2026-10-06

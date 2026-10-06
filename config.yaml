@@ -17,6 +17,14 @@ selecao:
     - [5000, 10000]
     - [10000, 50000]
     - [50000, null]
+  # Qualificadores acrescentados a toda consulta da busca.
+  filtros_busca: "fork:false archived:false"
+  # Lista de candidatos congelada: gerada na primeira execução e reaproveitada nas
+  # seguintes (e pelo grupo replicador). Apague o arquivo para refazer a busca.
+  arquivo_candidatos: dados/candidatos.csv
+  # Os candidatos são embaralhados com esta semente e avaliados nessa ordem até a
+  # amostra encher; os que sobram entram no funil como "não avaliados".
+  semente: 42
   # Quantos repositórios devem restar na amostra final (S01: 100, S02: >= 300).
   tamanho_amostra: 100
 
