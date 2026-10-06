@@ -46,7 +46,33 @@ Opções:
 | `-v`, `--verbose` | Log detalhado. |
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
-mesmo comando de novo: as respostas da API ficam em cache em `cache/`.
+mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
+
+### Cliente HTTP (`coleta/cliente.py`)
+
+Todo acesso à API passa por `ClienteGitHub`, implementado só com `requests`:
+
+- **Cache e retomada:** cada página de resposta é gravada no SQLite assim que chega,
+  com a URL (parâmetros ordenados) como chave. Erros definitivos (404, 409, 410, 451)
+  também ficam em cache, para não serem repetidos. Para forçar uma nova coleta,
+  apague `cache/api.sqlite`.
+- **Rate limit:** lê `X-RateLimit-Remaining`/`X-RateLimit-Reset` de cada resposta e,
+  quando a cota de um recurso (`core`, `search`...) chega a zero, pausa até a
+  renovação. Respostas 403/429 de limite secundário respeitam `Retry-After` (ou
+  esperam 60 s).
+- **Erros temporários:** respostas 5xx e falhas de rede são repetidas com backoff
+  exponencial (1 s, 2 s, 4 s, ...), até `coleta.max_tentativas`.
+- **Paginação:** `paginar()` segue o cabeçalho `Link` (`rel="next"`) até a última página.
+
+```python
+from coleta.cliente import ClienteGitHub
+
+with ClienteGitHub.de_config(config, token) as cliente:
+    releases = list(cliente.paginar(f"/repos/{dono}/{repo}/releases", {"per_page": 100}))
+    runs = cliente.paginar(f"/repos/{dono}/{repo}/actions/runs",
+                           {"branch": "main", "event": "push", "per_page": 100},
+                           chave_itens="workflow_runs")
+```
 
 ## Configuração (`config.yaml`)
 
