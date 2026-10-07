@@ -10,6 +10,7 @@ import logging
 from collections.abc import Iterable
 from dataclasses import dataclass, field
 from datetime import datetime
+from urllib.parse import quote
 
 from coleta.cliente import ErroAPI
 from coleta.modelos import CommitInfo, Release, Tag, ler_data
@@ -242,13 +243,34 @@ def _avancar(
             item.cursor = pagina["pageInfo"]["endCursor"]
             pendentes.append(item)
             continue
-        if item.total is not None and item.total != len(item.commits):
-            log.warning("%s: compare %s...%s trouxe %d de %d commits",
-                        repo, item.base, item.head, len(item.commits), item.total)
+        status = COMPARE_OK
+        if item.total is not None and len(item.commits) < item.total:
+            # A GraphQL para em 1.000 commits por compare; o REST paginado traz o resto.
+            # Se o REST recusar (ex.: 404 "No common ancestor", históricos sem ancestral
+            # comum), o par vira esse erro, como o compare do REST responderia.
+            status, commits_rest = _commits_rest(cliente, repo, item.base, item.head)
+            item.commits = commits_rest
+            if status == COMPARE_OK and len(item.commits) < item.total:
+                log.warning("%s: compare %s...%s trouxe %d de %d commits",
+                            repo, item.base, item.head, len(item.commits), item.total)
         resultados[(item.base, item.head)] = ResultadoCompare(
-            item.base, item.head, COMPARE_OK, tuple(item.commits), item.divergencia, item.total
+            item.base, item.head, status, tuple(item.commits), item.divergencia, item.total
         )
     return pendentes
+
+
+def _commits_rest(cliente, repo: str, base: str, head: str) -> tuple[str, list[CommitInfo]]:
+    """Todos os commits do compare pelo REST, paginado; erro definitivo vira o status."""
+    caminho = f"/repos/{repo}/compare/{quote(base, safe='/')}...{quote(head, safe='/')}"
+    log.info("%s: compare %s...%s passa de 1.000 commits; completando pelo REST", repo, base, head)
+    try:
+        return COMPARE_OK, [CommitInfo.da_rest(item) for item in
+                            cliente.paginar(caminho, {"per_page": 100}, chave_itens="commits")]
+    except ErroAPI as erro:
+        if erro.status is None or erro.status >= 500:
+            raise
+        log.info("%s: compare REST %s...%s falhou com HTTP %s", repo, base, head, erro.status)
+        return str(erro.status), []
 
 
 def _comparar_sozinho(cliente, repo: str, item: _CompareEmAndamento, resultados: dict) -> None:

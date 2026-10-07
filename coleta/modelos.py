@@ -27,10 +27,11 @@ class Candidato:
     criado_em: datetime
     branch_padrao: str
     url: str
-    faixa: str
+    faixa: str  # faixa de estrelas do config.yaml
+    subintervalo: str = ""  # pedaço da faixa em que a busca o encontrou
 
     @classmethod
-    def da_api(cls, item: dict[str, Any], faixa: str) -> Candidato:
+    def da_api(cls, item: dict[str, Any], faixa: str, subintervalo: str = "") -> Candidato:
         return cls(
             nome=item["full_name"],
             estrelas=item["stargazers_count"],
@@ -39,6 +40,7 @@ class Candidato:
             branch_padrao=item["default_branch"],
             url=item["html_url"],
             faixa=faixa,
+            subintervalo=subintervalo,
         )
 
 
@@ -81,6 +83,12 @@ class CommitInfo:
     def titulo(self) -> str:
         """Primeira linha da mensagem (o messageHeadline da GraphQL corta em ~70 caracteres)."""
         return self.mensagem.splitlines()[0] if self.mensagem else ""
+
+    @classmethod
+    def da_rest(cls, item: dict[str, Any]) -> CommitInfo:
+        commit = item.get("commit") or {}
+        return cls(sha=item["sha"], data_autor=ler_data((commit.get("author") or {}).get("date")),
+                   mensagem=commit.get("message") or "")
 
     @classmethod
     def da_graphql(cls, no: dict[str, Any]) -> CommitInfo:

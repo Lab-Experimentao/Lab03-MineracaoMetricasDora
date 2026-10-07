@@ -13,7 +13,7 @@ from coleta import saida
 from coleta.candidatos import gravar_candidatos, ler_candidatos
 from coleta.cliente import ClienteGitHub
 from coleta.repositorio import coletar_repositorio
-from coleta.selecao import buscar_candidatos, consulta_faixa, embaralhar, resumir_funil, selecionar
+from coleta.selecao import buscar_candidatos, embaralhar, resumir_funil, rotulo_faixa, selecionar
 from pipeline.config import Config
 
 log = logging.getLogger(__name__)
@@ -27,9 +27,10 @@ def executar(config: Config, token: str) -> None:
             candidatos, faixas, buscado_em = ler_candidatos(arquivo)
             log.info("usando %d candidatos de %s (busca de %s; apague o arquivo para refazê-la)",
                      len(candidatos), arquivo, buscado_em)
-            consultas = {consulta_faixa(minimo, maximo, config.selecao.filtros_busca)
-                         for minimo, maximo in config.selecao.faixas_estrelas}
-            if faixas and consultas != {f.consulta for f in faixas}:
+            faixas_config = {rotulo_faixa(minimo, maximo) for minimo, maximo in config.selecao.faixas_estrelas}
+            filtros = config.selecao.filtros_busca
+            if faixas and (faixas_config != {f.faixa for f in faixas}
+                           or not all(f.consulta.endswith(filtros) for f in faixas)):
                 log.warning("as faixas ou os filtros do config mudaram desde a busca gravada em %s", arquivo)
         else:
             candidatos, faixas = buscar_candidatos(

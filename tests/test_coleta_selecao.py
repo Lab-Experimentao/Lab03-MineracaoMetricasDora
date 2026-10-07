@@ -57,21 +57,77 @@ def test_consulta_das_faixas():
     assert sel.consulta_faixa(50000, None) == "stars:>=50000"
 
 
-def test_busca_deduplica_faixas_vizinhas_e_registra_disponiveis():
-    def rota(params):
-        if params["q"].startswith("stars:1000..2000"):
-            return [{"total_count": 15000, "items": [item_busca("a/x", 1200), item_busca("b/y", 2000)]}]
-        return [{"total_count": 2, "items": [item_busca("b/y", 2000), item_busca("c/z", 3000)]}]
+class BuscaFalsa:
+    """Imita a busca do GitHub: filtra por estrelas, ordena do maior para o menor e
+    devolve no máximo 1.000 resultados, em páginas de 100."""
 
-    cliente = ClienteFalso({"/search/repositories": rota})
-    candidatos, faixas = sel.buscar_candidatos(cliente, [(1000, 2000), (2000, 5000)], "fork:false")
+    def __init__(self, estrelas_por_repo):
+        self.repos = estrelas_por_repo
+        self.consultas = []
 
-    assert [c.nome for c in candidatos] == ["a/x", "b/y", "c/z"]
-    assert candidatos[1].faixa == "1000..2000"
-    assert [(f.faixa, f.disponiveis, f.obtidos) for f in faixas] == [
-        ("1000..2000", 15000, 2), ("2000..5000", 2, 2),
-    ]
-    assert cliente.chamadas[0][1]["sort"] == "stars"
+    def __call__(self, params):
+        self.consultas.append(params["q"])
+        faixa = params["q"].split()[0].removeprefix("stars:")
+        if faixa.startswith(">="):
+            minimo, maximo = int(faixa[2:]), float("inf")
+        else:
+            minimo, maximo = map(int, faixa.split(".."))
+        achados = sorted(((n, e) for n, e in self.repos.items() if minimo <= e <= maximo),
+                         key=lambda par: -par[1])
+        visiveis = achados[:1000]
+        paginas = [visiveis[i:i + 100] for i in range(0, len(visiveis), 100)] or [[]]
+        return [{"total_count": len(achados), "items": [item_busca(n, e) for n, e in pagina]}
+                for pagina in paginas]
+
+
+def test_faixa_acima_do_teto_e_subdividida_ate_trazer_todos():
+    repos = {f"dono/r{i}": 1000 + i % 1001 for i in range(2500)}  # 2.500 entre 1.000 e 2.000
+    cliente = ClienteFalso({"/search/repositories": BuscaFalsa(repos)})
+
+    candidatos, faixas = sel.buscar_candidatos(cliente, [(1000, 2000)], "fork:false")
+
+    assert len(candidatos) == 2500  # nenhum cortado pelo teto
+    assert min(c.estrelas for c in candidatos) == 1000
+    assert all(f.faixa == "1000..2000" and f.obtidos == f.disponiveis <= 1000 for f in faixas)
+    assert len(faixas) > 1
+    assert sum(f.disponiveis for f in faixas) == 2500
+    assert all(f.consulta.endswith("fork:false") for f in faixas)
+    assert {c.subintervalo for c in candidatos} == {f.subintervalo for f in faixas}
+
+
+def test_faixa_dentro_do_teto_e_uma_consulta_so():
+    repos = {f"dono/r{i}": 1500 + i for i in range(300)}
+    busca = BuscaFalsa(repos)
+    _, faixas = sel.buscar_candidatos(ClienteFalso({"/search/repositories": busca}), [(1000, 2000)])
+    assert len(busca.consultas) == 1
+    assert [(f.subintervalo, f.disponiveis, f.obtidos) for f in faixas] == [("1000..2000", 300, 300)]
+
+
+def test_faixa_aberta_acima_do_teto_usa_o_maior_como_limite():
+    repos = {f"dono/r{i}": 50000 + i * 10 for i in range(1500)}
+    candidatos, faixas = sel.buscar_candidatos(
+        ClienteFalso({"/search/repositories": BuscaFalsa(repos)}), [(50000, None)]
+    )
+    assert len(candidatos) == 1500
+    assert all(f.faixa == ">=50000" for f in faixas)
+
+
+def test_mais_de_mil_com_o_mesmo_numero_de_estrelas_fica_registrado():
+    repos = {f"dono/r{i}": 1000 for i in range(1200)}
+    candidatos, faixas = sel.buscar_candidatos(
+        ClienteFalso({"/search/repositories": BuscaFalsa(repos)}), [(1000, 1000)]
+    )
+    assert len(candidatos) == 1000
+    assert [(f.disponiveis, f.obtidos) for f in faixas] == [(1200, 1000)]
+
+
+def test_faixas_vizinhas_nao_repetem_candidatos():
+    repos = {"dono/borda": 2000, "dono/a": 1500, "dono/b": 3000}
+    candidatos, _ = sel.buscar_candidatos(
+        ClienteFalso({"/search/repositories": BuscaFalsa(repos)}), [(1000, 2000), (2000, 5000)]
+    )
+    assert sorted(c.nome for c in candidatos) == ["dono/a", "dono/b", "dono/borda"]
+    assert next(c for c in candidatos if c.nome == "dono/borda").faixa == "1000..2000"
 
 
 def test_embaralhar_e_reproduzivel_e_nao_depende_da_ordem_da_api():
