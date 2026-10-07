@@ -5,7 +5,7 @@ commits e workflow runs do GitHub Actions) e calcula aproximações das métrica
 
 ## Requisitos
 
-- Python 3.12
+- Python 3.11
 - Um token pessoal do GitHub em um arquivo .env
 
 ## Instalação
@@ -226,3 +226,7 @@ tests/      testes com pytest
 ```bash
 pytest --cov=metricas --cov-report=term-missing
 ```
+
+O workflow [`.github/workflows/testes.yml`](.github/workflows/testes.yml) roda os testes no
+GitHub Actions a cada push e pull request, e falha se a cobertura do módulo `metricas`
+ficar abaixo de 80% (`--cov-fail-under=80`).
