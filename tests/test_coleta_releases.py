@@ -230,3 +230,52 @@ def test_erro_temporario_propaga():
     servidor = ServidorCompare({}, erros={("v1", "v2"): 502})
     with pytest.raises(ErroAPI):
         rel.coletar_compares(ClienteFalso({"graphql": servidor}), "dono/repo", [par("v2", "v1")], {"v1", "v2"})
+
+
+class ServidorCompareComTeto(ServidorCompare):
+    """Como a GraphQL real: o compare para em 1.000 commits, embora aheadBy diga o total."""
+
+    def __call__(self, v):
+        resposta = super().__call__(v)
+        for alias, ref in resposta["repository"].items():
+            commits = ref["compare"]["commits"]
+            if int(commits["pageInfo"]["endCursor"]) >= 1000:
+                commits["pageInfo"]["hasNextPage"] = False
+        return resposta
+
+
+def commits_rest(total, head="v2"):
+    paginas = []
+    for inicio in range(0, total, 100):
+        itens = [{"sha": f"{head}-{n}", "commit": {"message": f"fix {n}\n\ncorpo",
+                                                   "author": {"date": "2025-10-01T00:00:00Z"}}}
+                 for n in range(inicio, min(inicio + 100, total))]
+        paginas.append(pagina({"total_commits": total, "commits": itens},
+                              {"next": "x"} if inicio + 100 < total else {}))
+    return paginas
+
+
+def test_compare_acima_de_mil_commits_e_completado_pelo_rest():
+    cliente = ClienteFalso({
+        "graphql": ServidorCompareComTeto({("v1", "v2"): 1500}),
+        "/repos/dono/repo/compare/v1...v2": commits_rest(1500),
+    })
+    [resultado] = rel.coletar_compares(cliente, "dono/repo", [par("v2", "v1")], {"v1", "v2"}).values()
+    assert len(resultado.commits) == 1500 == resultado.total_commits
+    assert resultado.commits[0].mensagem == "fix 0\n\ncorpo"
+    assert "/repos/dono/repo/compare/v1...v2" in cliente.caminhos()
+
+
+def test_compare_ate_mil_commits_nao_usa_o_rest():
+    cliente = ClienteFalso({"graphql": ServidorCompareComTeto({("v1", "v2"): 1000})})
+    [resultado] = rel.coletar_compares(cliente, "dono/repo", [par("v2", "v1")], {"v1", "v2"}).values()
+    assert len(resultado.commits) == 1000
+    assert all(c == "graphql" for c in cliente.caminhos())
+
+
+def test_sem_ancestral_comum_vira_404_como_no_rest():
+    # Caso real (cloudflare/terraform-provider-cloudflare, v4 x v5): a GraphQL lista 1.000
+    # commits, mas o REST responde 404 "No common ancestor".
+    cliente = ClienteFalso({"graphql": ServidorCompareComTeto({("v1", "v2"): 1500})})  # REST dá 404
+    [resultado] = rel.coletar_compares(cliente, "dono/repo", [par("v2", "v1")], {"v1", "v2"}).values()
+    assert (resultado.status, resultado.commits) == ("404", ())

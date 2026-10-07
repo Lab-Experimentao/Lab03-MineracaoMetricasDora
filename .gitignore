@@ -8,7 +8,11 @@ secrets.*
 
 # Cache da API e dados brutos (regeráveis pelo pipeline)
 cache/
-dados/brutos/
+dados/brutos/*
+# Exceção: o funil vai para a Metodologia (~3 MB, uma linha por candidato)
+!dados/brutos/funil.csv
+!dados/brutos/funil_resumo.csv
+!dados/brutos/faixas_busca.csv
 *.sqlite
 *.sqlite3
 *.db

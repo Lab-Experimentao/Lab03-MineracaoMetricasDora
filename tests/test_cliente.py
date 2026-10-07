@@ -380,3 +380,18 @@ def test_graphql_5xx_repete_com_backoff(cache, relogio):
     ])
     assert cliente.graphql("q") == {"ok": True}
     assert relogio.esperas == [1.0]
+
+
+def test_cache_comprime_o_corpo_e_le_entradas_antigas_em_texto(cache):
+    corpo = {"workflow_runs": [{"id": i, "name": "CI"} for i in range(200)]}
+    cache.gravar(f"{API}/repos/o/r/actions/runs", 200, corpo, {})
+    bruto = cache._conexao.execute("SELECT corpo FROM respostas").fetchone()[0]
+    assert isinstance(bruto, bytes) and len(bruto) < len(json.dumps(corpo)) / 5
+    assert cache.obter(f"{API}/repos/o/r/actions/runs").dados == corpo
+
+    # Entrada gravada por uma versão anterior do cache, com o JSON como texto.
+    cache._conexao.execute(
+        "INSERT INTO respostas VALUES (?, 200, ?, '{}', '2026-01-01')",
+        (url_canonica(f"{API}/antigo"), json.dumps({"x": 1})),
+    )
+    assert cache.obter(f"{API}/antigo").dados == {"x": 1}

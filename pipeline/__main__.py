@@ -65,7 +65,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             executar_coleta(config, token)
         elif etapa == "metricas":
             from metricas.etapa import executar as executar_metricas
-            executar_metricas(config)
+            try:
+                executar_metricas(config)
+            except FileNotFoundError as erro:
+                log.error("%s", erro)
+                return 2
         elif etapa == "analise":
             from analise.etapa import executar as executar_analise
             executar_analise(config)

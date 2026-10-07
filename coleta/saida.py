@@ -152,7 +152,7 @@ ARQUIVOS_COLETA = {
     "runs_intervalos.csv": (linhas_intervalos_runs, ["repositorio", "inicio", "fim", "total", "truncado"]),
 }
 
-COLUNAS_FAIXAS = ["faixa", "consulta", "disponiveis", "obtidos"]
+COLUNAS_FAIXAS = ["faixa", "subintervalo", "consulta", "disponiveis", "obtidos"]
 COLUNAS_FUNIL = [
     "repositorio", "faixa", "estrelas", "situacao", "n_workflows", "n_releases_janela",
     "n_runs_validos", "detalhe",

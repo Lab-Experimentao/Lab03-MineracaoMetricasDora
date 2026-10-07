@@ -7,6 +7,7 @@ import logging
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from itertools import chain
 
 from coleta import releases as rel
 from coleta import workflow_runs as wr
@@ -46,37 +47,77 @@ def consulta_faixa(minimo: int, maximo: int | None, filtros: str = "") -> str:
 
 @dataclass(frozen=True)
 class ResumoFaixa:
+    """Uma consulta folha da busca: `subintervalo` é o pedaço de `faixa` que coube no teto."""
+
     faixa: str
     consulta: str
     disponiveis: int  # total_count da busca
-    obtidos: int  # limitado a 1.000 pela API
+    obtidos: int  # igual a `disponiveis`, salvo num subintervalo de uma única contagem acima do teto
+    subintervalo: str = ""
+
+
+# Cada consulta da busca devolve no máximo 1.000 resultados (10 páginas de 100).
+LIMITE_BUSCA = MAX_PAGINAS_BUSCA * 100
 
 
 def buscar_candidatos(
     cliente, faixas: Iterable[tuple[int, int | None]], filtros: str = ""
 ) -> tuple[list[Candidato], list[ResumoFaixa]]:
-    """Candidatos de todas as faixas, sem repetição (faixas vizinhas compartilham o limite)."""
+    """Todos os repositórios de cada faixa de estrelas, sem repetição.
+
+    A busca devolve só os 1.000 primeiros (os de mais estrelas) de cada consulta, então
+    uma faixa com mais resultados é dividida ao meio, recursivamente, até cada pedaço
+    caber no teto. Faixas vizinhas compartilham o limite, por isso a deduplicação.
+    """
     candidatos: dict[str, Candidato] = {}
-    resumos = []
+    resumos: list[ResumoFaixa] = []
     for minimo, maximo in faixas:
         faixa = rotulo_faixa(minimo, maximo)
-        consulta = consulta_faixa(minimo, maximo, filtros)
-        params = {"q": consulta, "sort": "stars", "order": "desc", "per_page": 100}
-        disponiveis = obtidos = 0
-        for numero, pagina in enumerate(
-            cliente.paginas("/search/repositories", params, max_paginas=MAX_PAGINAS_BUSCA)
-        ):
-            dados = pagina.dados or {}
-            if numero == 0:
-                disponiveis = dados.get("total_count", 0)
-            if dados.get("incomplete_results"):
-                log.warning("busca '%s' devolveu resultados incompletos", consulta)
-            for item in dados.get("items", []):
-                obtidos += 1
-                candidatos.setdefault(item["full_name"], Candidato.da_api(item, faixa))
-        resumos.append(ResumoFaixa(faixa, consulta, disponiveis, obtidos))
-        log.info("faixa %s: %d disponíveis, %d obtidos", faixa, disponiveis, obtidos)
+        antes = len(resumos)
+        _buscar_intervalo(cliente, faixa, minimo, maximo, filtros, candidatos, resumos)
+        folhas = resumos[antes:]
+        log.info("faixa %s: %d disponíveis, %d obtidos em %d consulta(s)", faixa,
+                 sum(r.disponiveis for r in folhas), sum(r.obtidos for r in folhas), len(folhas))
     return list(candidatos.values()), resumos
+
+
+def _buscar_intervalo(
+    cliente, faixa: str, minimo: int, maximo: int | None, filtros: str,
+    candidatos: dict[str, Candidato], resumos: list[ResumoFaixa],
+) -> None:
+    consulta = consulta_faixa(minimo, maximo, filtros)
+    params = {"q": consulta, "sort": "stars", "order": "desc", "per_page": 100}
+    paginas = cliente.paginas("/search/repositories", params, max_paginas=MAX_PAGINAS_BUSCA)
+    primeira = next(paginas, None)
+    dados = (primeira.dados if primeira else None) or {}
+    disponiveis = dados.get("total_count", 0)
+
+    if disponiveis > LIMITE_BUSCA:
+        if maximo is None:
+            # Faixa aberta ("50000 ou mais"): o primeiro item é o de mais estrelas.
+            itens = dados.get("items") or [{"stargazers_count": minimo}]
+            maximo = itens[0]["stargazers_count"]
+        if maximo > minimo:
+            paginas.close()
+            meio = (minimo + maximo) // 2
+            log.debug("busca %s: %d resultados; dividindo", consulta, disponiveis)
+            _buscar_intervalo(cliente, faixa, minimo, meio, filtros, candidatos, resumos)
+            _buscar_intervalo(cliente, faixa, meio + 1, maximo, filtros, candidatos, resumos)
+            return
+        log.warning("busca %s: %d repositórios com exatamente %d estrelas; só %d obtidos",
+                    consulta, disponiveis, minimo, LIMITE_BUSCA)
+
+    obtidos = 0
+    subintervalo = rotulo_faixa(minimo, maximo)
+    for pagina in chain([primeira] if primeira else [], paginas):
+        pagina_dados = pagina.dados or {}
+        if pagina_dados.get("incomplete_results"):
+            log.warning("busca '%s' devolveu resultados incompletos", consulta)
+        for item in pagina_dados.get("items", []):
+            obtidos += 1
+            candidatos.setdefault(item["full_name"], Candidato.da_api(item, faixa, subintervalo))
+    resumos.append(ResumoFaixa(faixa, consulta, disponiveis, obtidos, subintervalo))
+    log.info("  %s: %d disponíveis, %d obtidos", subintervalo, disponiveis, obtidos)
 
 
 def _posicao_sorteada(nome: str, semente: int) -> str:

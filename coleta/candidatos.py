@@ -17,9 +17,10 @@ from coleta.saida import gravar_csv
 from coleta.selecao import ResumoFaixa
 
 COLUNAS_CANDIDATOS = [
-    "repositorio", "faixa", "estrelas", "linguagem", "criado_em", "branch_padrao", "url", "buscado_em",
+    "repositorio", "faixa", "subintervalo", "estrelas", "linguagem", "criado_em", "branch_padrao",
+    "url", "buscado_em",
 ]
-COLUNAS_FAIXAS = ["faixa", "consulta", "disponiveis", "obtidos", "buscado_em"]
+COLUNAS_FAIXAS = ["faixa", "subintervalo", "consulta", "disponiveis", "obtidos", "buscado_em"]
 
 
 def arquivo_faixas(arquivo_candidatos: Path) -> Path:
@@ -31,8 +32,8 @@ def gravar_candidatos(
 ) -> None:
     gravar_csv(arquivo, (
         {
-            "repositorio": c.nome, "faixa": c.faixa, "estrelas": c.estrelas, "linguagem": c.linguagem,
-            "criado_em": c.criado_em, "branch_padrao": c.branch_padrao, "url": c.url, "buscado_em": buscado_em,
+            "repositorio": c.nome, "faixa": c.faixa, "subintervalo": c.subintervalo,
+            "estrelas": c.estrelas, "linguagem": c.linguagem, "criado_em": c.criado_em, "branch_padrao": c.branch_padrao, "url": c.url, "buscado_em": buscado_em,
         }
         for c in candidatos
     ), COLUNAS_CANDIDATOS)
@@ -52,6 +53,7 @@ def ler_candidatos(arquivo: Path) -> tuple[list[Candidato], list[ResumoFaixa], s
             branch_padrao=l["branch_padrao"],
             url=l["url"],
             faixa=l["faixa"],
+            subintervalo=l.get("subintervalo", ""),
         )
         for l in linhas
     ]
@@ -60,7 +62,8 @@ def ler_candidatos(arquivo: Path) -> tuple[list[Candidato], list[ResumoFaixa], s
     if caminho_faixas.is_file():
         with caminho_faixas.open(encoding="utf-8", newline="") as entrada:
             faixas = [
-                ResumoFaixa(l["faixa"], l["consulta"], int(l["disponiveis"]), int(l["obtidos"]))
+                ResumoFaixa(l["faixa"], l["consulta"], int(l["disponiveis"]), int(l["obtidos"]),
+                            l.get("subintervalo", ""))
                 for l in csv.DictReader(entrada)
             ]
     buscado_em = linhas[0]["buscado_em"] if linhas else ""
