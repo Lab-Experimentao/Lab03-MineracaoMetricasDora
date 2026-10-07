@@ -29,12 +29,15 @@ def test_config_do_projeto_e_valido():
     assert config.workflow_runs.evento == "push"
     assert config.workflow_runs.conclusoes_falha == {"failure", "timed_out", "startup_failure"}
     assert config.janela.dias in (365, 366)
+    assert config.selecao.semente == 42
+    assert config.selecao.filtros_busca == "fork:false archived:false"
 
 
 def test_caminhos_relativos_ao_config(tmp_path, dados_config):
     config = carregar_config(_gravar(tmp_path, dados_config))
     assert config.coleta.cache_dir == tmp_path.resolve() / "cache"
     assert config.saida_dir == tmp_path.resolve() / "dados"
+    assert config.selecao.arquivo_candidatos == tmp_path.resolve() / "dados" / "candidatos.csv"
 
 
 def test_janela_inclui_ultimo_dia_inteiro():
@@ -114,7 +117,11 @@ def test_arquivo_env_inexistente_e_ignorado(tmp_path, monkeypatch):
 def test_main_le_token_do_env_ao_lado_do_config(tmp_path, dados_config, monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     (tmp_path / ".env").write_text("GITHUB_TOKEN=do_arquivo\n", encoding="utf-8")
+    tokens = []
+    # Sem rede nos testes: a coleta só registra o token recebido.
+    monkeypatch.setattr("coleta.etapa.executar", lambda config, token: tokens.append(token))
     assert main(["--config", str(_gravar(tmp_path, dados_config))]) == 0
+    assert tokens == ["do_arquivo"]
 
 
 def test_main_sem_token_falha_na_coleta(tmp_path, dados_config, monkeypatch):

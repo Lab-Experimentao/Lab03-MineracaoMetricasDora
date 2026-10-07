@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import re
 import time
@@ -173,11 +175,49 @@ class ClienteGitHub:
             itens = pagina.dados if chave_itens is None else pagina.dados.get(chave_itens, [])
             yield from itens
 
+    def graphql(self, consulta: str, variaveis: dict[str, Any] | None = None) -> Any:
+        """POST na API GraphQL; devolve o campo `data`.
+
+        A URL é sempre a mesma, então a chave do cache é o hash da consulta com as
+        variáveis. Respostas com `errors` não vão para o cache e viram ErroAPI.
+        """
+        corpo = {"query": consulta, "variables": variaveis or {}}
+        resumo = hashlib.sha256(json.dumps(corpo, sort_keys=True).encode()).hexdigest()
+        chave = self.montar_url("graphql", {"consulta": resumo})
+        cacheada = self.cache.obter(chave)
+        if cacheada is not None:
+            self.acertos_cache += 1
+            log.debug("cache: graphql %s", resumo[:12])
+            return cacheada.dados
+
+        url = self.montar_url("graphql")
+        for _ in range(self.max_tentativas):
+            resposta = self._requisitar(url, corpo)
+            dados = _corpo_json(resposta)
+            erros = dados.get("errors") if isinstance(dados, dict) else None
+            if resposta.status_code < 400 and not erros:
+                self.cache.gravar(chave, resposta.status_code, dados["data"], {})
+                return dados["data"]
+            tipos = {e.get("type") for e in erros or []}
+            if "RATE_LIMITED" in tipos:
+                # Cota esgotada com HTTP 200. Se os cabeçalhos já zeraram a cota, a próxima
+                # requisição espera a renovação; senão, espera o mínimo do limite secundário.
+                cota = self._cotas.get("graphql")
+                if cota is None or cota.restantes > 0:
+                    log.warning("cota GraphQL esgotada; aguardando %.0f s", ESPERA_MINIMA_LIMITE_SECUNDARIO)
+                    self._dormir(ESPERA_MINIMA_LIMITE_SECUNDARIO)
+                continue
+            status = 404 if "NOT_FOUND" in tipos else resposta.status_code
+            mensagens = "; ".join(e.get("message", "") for e in erros or []) or str(dados)
+            raise ErroAPI(f"GraphQL HTTP {status}: {mensagens}", status=status, url=url)
+        raise ErroAPI(f"cota GraphQL esgotada após {self.max_tentativas} tentativas", url=url)
+
     def rate_limit(self) -> dict[str, Any]:
         """Cota atual; não consome cota nem usa o cache."""
         return self.obter("/rate_limit", usar_cache=False).dados
 
-    def _requisitar(self, url: str) -> requests.Response:
+    def _requisitar(self, url: str, corpo: dict[str, Any] | None = None) -> requests.Response:
+        """GET em `url`, ou POST com `corpo` em JSON (GraphQL)."""
         recurso = _recurso_da_url(url)
         tentativa = 0
         while True:
@@ -185,7 +225,10 @@ class ClienteGitHub:
             tentativa += 1
             try:
                 self.chamadas_api += 1
-                resposta = self._sessao.get(url, timeout=self.timeout)
+                if corpo is None:
+                    resposta = self._sessao.get(url, timeout=self.timeout)
+                else:
+                    resposta = self._sessao.post(url, json=corpo, timeout=self.timeout)
             except (requests.ConnectionError, requests.Timeout) as erro:
                 self._backoff_ou_desistir(tentativa, url, f"erro de rede: {erro}")
                 continue

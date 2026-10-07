@@ -24,10 +24,19 @@ class SessaoFalsa:
     def __init__(self, respostas):
         self.respostas = list(respostas)
         self.urls = []
+        self.corpos = []
         self.headers = {}
 
     def get(self, url, timeout):
         self.urls.append(url)
+        item = self.respostas.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    def post(self, url, json, timeout):
+        self.urls.append(url)
+        self.corpos.append(json)
         item = self.respostas.pop(0)
         if isinstance(item, Exception):
             raise item
@@ -323,3 +332,51 @@ def test_de_config_cria_cache_na_pasta_configurada(tmp_path):
         assert cliente.max_tentativas == config.coleta.max_tentativas
         assert cliente.backoff_inicial == config.coleta.backoff_inicial_segundos
     assert (tmp_path / "cache" / "api.sqlite").is_file()
+
+
+def test_graphql_faz_post_e_guarda_no_cache(cache, relogio):
+    cliente, sessao = criar_cliente(cache, relogio, [resposta(corpo={"data": {"x": 1}})])
+    assert cliente.graphql("query { x }", {"a": 1}) == {"x": 1}
+    assert cliente.graphql("query { x }", {"a": 1}) == {"x": 1}
+    assert sessao.urls == [f"{API}/graphql"]
+    assert sessao.corpos == [{"query": "query { x }", "variables": {"a": 1}}]
+    assert cliente.acertos_cache == 1
+
+
+def test_graphql_variaveis_diferentes_nao_compartilham_cache(cache, relogio):
+    cliente, sessao = criar_cliente(cache, relogio, [
+        resposta(corpo={"data": {"pagina": 1}}), resposta(corpo={"data": {"pagina": 2}}),
+    ])
+    assert cliente.graphql("q", {"cursor": None}) == {"pagina": 1}
+    assert cliente.graphql("q", {"cursor": "abc"}) == {"pagina": 2}
+    assert len(sessao.urls) == 2
+
+
+def test_graphql_not_found_vira_404_e_nao_vai_para_o_cache(cache, relogio):
+    erro = {"data": {"repository": None}, "errors": [{"type": "NOT_FOUND", "message": "não existe"}]}
+    cliente, _ = criar_cliente(cache, relogio, [resposta(corpo=erro)])
+    with pytest.raises(ErroAPI) as info:
+        cliente.graphql("q")
+    assert info.value.status == 404
+    assert len(cache) == 0
+
+
+def test_graphql_rate_limited_espera_a_renovacao_e_repete(cache, relogio):
+    reset = relogio.agora + 600
+    esgotada = resposta(
+        corpo={"errors": [{"type": "RATE_LIMITED", "message": "API rate limit exceeded"}]},
+        headers={"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": str(reset),
+                 "X-RateLimit-Resource": "graphql"},
+    )
+    cliente, sessao = criar_cliente(cache, relogio, [esgotada, resposta(corpo={"data": {"ok": True}})])
+    assert cliente.graphql("q") == {"ok": True}
+    assert len(sessao.urls) == 2
+    assert relogio.esperas and relogio.esperas[0] >= 600
+
+
+def test_graphql_5xx_repete_com_backoff(cache, relogio):
+    cliente, sessao = criar_cliente(cache, relogio, [
+        resposta(status=502), resposta(corpo={"data": {"ok": True}}),
+    ])
+    assert cliente.graphql("q") == {"ok": True}
+    assert relogio.esperas == [1.0]
