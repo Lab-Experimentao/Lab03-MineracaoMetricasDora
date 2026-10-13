@@ -147,7 +147,7 @@ ARQUIVOS_COLETA = {
     "commits.csv": (linhas_commits, ["repositorio", "tag_anterior", "tag", "sha", "data_autor", "titulo", "mensagem"]),
     "runs.csv": (linhas_runs, [
         "repositorio", "id", "workflow_id", "workflow_nome", "conclusao", "status",
-        "criado_em", "iniciado_em", "atualizado_em", "head_sha",
+        "criado_em", "iniciado_em", "atualizado_em", "head_sha", "tentativa",
     ]),
     "runs_intervalos.csv": (linhas_intervalos_runs, ["repositorio", "inicio", "fim", "total", "truncado"]),
 }
