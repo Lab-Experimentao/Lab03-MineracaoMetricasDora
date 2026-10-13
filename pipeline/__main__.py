@@ -10,7 +10,7 @@ from pathlib import Path
 
 from pipeline.config import ErroConfig, carregar_config, obter_token
 
-ETAPAS = ("coleta", "metricas", "analise")
+ETAPAS = ("coleta", "metricas", "validacao", "analise")
 
 log = logging.getLogger("pipeline")
 
@@ -67,6 +67,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             from metricas.etapa import executar as executar_metricas
             try:
                 executar_metricas(config)
+            except FileNotFoundError as erro:
+                log.error("%s", erro)
+                return 2
+        elif etapa == "validacao":
+            from validacao.etapa import executar as executar_validacao
+            try:
+                executar_validacao(config)
             except FileNotFoundError as erro:
                 log.error("%s", erro)
                 return 2
