@@ -81,6 +81,7 @@ Origem: `GET /repos/{repo}/releases`.
 | `draft` | booleano | — | `draft`. |
 | `prerelease` | booleano | — | `prerelease`. |
 | `url` | texto | — | `html_url` (página da release no GitHub). |
+| `notas` | texto | — | `body`: texto das release notes, em Markdown; vazio se a release não tem notas. |
 
 ### `tags.csv`
 
@@ -198,6 +199,8 @@ Aba `releases` (uma linha por release de `amostra_ouro.csv`):
 |---|---|---|---|
 | `repositorio`, `tag`, `tag_anterior`, `publicada_em`, `url_release`, `url_commits` | — | — | Iguais a `amostra_ouro.csv`. |
 | `corretiva` | texto | `sim`, `não` | O objetivo principal da release é corrigir um defeito recente? (RQ 03 b) |
+| `notas_release` | texto | — | Início das release notes (`notas` de `releases.csv`, até 1.000 caracteres, com aviso quando cortado). |
+| `titulos_commits` | texto | — | Títulos dos commits do compare com a release anterior (`commits.csv`, até 20, com aviso quando há mais); ou o motivo de não haver lista (primeira release, compare com erro). |
 | `observacoes` | texto | livre | Dúvidas e justificativas. |
 
 ## Seleção da amostra

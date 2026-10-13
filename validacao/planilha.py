@@ -10,7 +10,8 @@ from pathlib import Path
 
 import pandas as pd
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
+from openpyxl.styles import Alignment, Font
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -20,9 +21,11 @@ CORRETIVA = ("sim", "não")
 
 COLUNAS_REPOSITORIOS = ["repositorio", "url_repositorio", "tipo_projeto", "entregas_reais", "observacoes"]
 COLUNAS_RELEASES = [
-    "repositorio", "tag", "tag_anterior", "publicada_em", "url_release", "url_commits",
-    "corretiva", "observacoes",
+    "repositorio", "tag", "tag_anterior", "publicada_em", "corretiva", "notas_release",
+    "titulos_commits", "url_release", "url_commits", "observacoes",
 ]
+# Colunas de texto longo: largura fixa e quebra de linha.
+COLUNAS_TEXTO = {"notas_release": 70, "titulos_commits": 60}
 
 INSTRUCOES = [
     "Rotulagem da amostra-ouro (Lab03, seção 6 do enunciado)",
@@ -36,12 +39,19 @@ INSTRUCOES = [
     "",
     "Aba 'releases' (5 releases sorteadas por repositório):",
     "  corretiva: o objetivo principal da release é corrigir um defeito recente? sim ou não.",
-    "  Leia as release notes (url_release) e a lista de commits desde a release anterior (url_commits).",
+    "  notas_release traz o início das release notes e titulos_commits os títulos dos commits desde a",
+    "  release anterior; na maioria dos casos eles bastam. Se estiverem cortados, vazios ou ambíguos,",
+    "  abra url_release (página da release) e url_commits (lista completa de commits).",
     "  url_commits fica vazio quando a release é a primeira da história do repositório.",
     "  A release anterior é a publicada logo antes, por data. Em projetos com várias linhas de versão",
     "  (ex.: v3.0.15 publicada depois de v4.1.1), ela pode ser de outra linha e a lista de commits não",
     "  reflete a release; nesse caso, julgue pelas release notes e anote em 'observacoes'.",
 ]
+
+
+def _texto(valor) -> str:
+    """Texto seguro para a célula: sem caracteres de controle que o Excel rejeita."""
+    return ILLEGAL_CHARACTERS_RE.sub("", str(valor if valor is not None else ""))
 
 
 def _aba(planilha: Workbook, titulo: str, colunas: list[str], linhas: list[dict]) -> Worksheet:
@@ -50,16 +60,26 @@ def _aba(planilha: Workbook, titulo: str, colunas: list[str], linhas: list[dict]
     for celula in aba[1]:
         celula.font = Font(bold=True)
     aba.freeze_panes = "A2"
-    for linha in linhas:
-        aba.append([linha.get(c, "") for c in colunas])
+    for numero, linha in enumerate(linhas, start=2):
+        for indice, coluna in enumerate(colunas, start=1):
+            celula = aba.cell(numero, indice, _texto(linha.get(coluna, "")) or None)
+            # Notas e títulos podem começar com "="; sem isso o Excel os leria como fórmula.
+            if celula.value is not None:
+                celula.data_type = "s"
     for indice, coluna in enumerate(colunas, start=1):
+        letra = aba.cell(1, indice).column_letter
         if coluna.startswith("url"):
             for (celula,) in aba.iter_rows(min_row=2, min_col=indice, max_col=indice):
                 if celula.value:
                     celula.hyperlink = celula.value
                     celula.style = "Hyperlink"
+        if coluna in COLUNAS_TEXTO:
+            aba.column_dimensions[letra].width = COLUNAS_TEXTO[coluna]
+            for (celula,) in aba.iter_rows(min_row=2, min_col=indice, max_col=indice):
+                celula.alignment = Alignment(wrap_text=True, vertical="top")
+            continue
         largura = max([len(coluna)] + [len(str(l.get(coluna, ""))) for l in linhas])
-        aba.column_dimensions[aba.cell(1, indice).column_letter].width = min(largura + 2, 60)
+        aba.column_dimensions[letra].width = min(largura + 2, 45)
     return aba
 
 
@@ -73,7 +93,7 @@ def _lista(aba: Worksheet, colunas: list[str], coluna: str, valores: tuple[str, 
 
 
 def gerar_planilha(destino: Path, amostra: pd.DataFrame) -> None:
-    """Grava a planilha em branco a partir da amostra-ouro (saída de `sortear_releases`)."""
+    """Grava a planilha em branco a partir da amostra-ouro com os textos (saída de `com_textos`)."""
     planilha = Workbook()
     instrucoes = planilha.active
     instrucoes.title = "instrucoes"

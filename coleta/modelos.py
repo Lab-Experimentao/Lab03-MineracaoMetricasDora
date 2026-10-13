@@ -51,6 +51,7 @@ class Release:
     draft: bool
     prerelease: bool
     url: str
+    notas: str = ""  # body: texto das release notes (lido na rotulagem da amostra-ouro)
 
     @classmethod
     def da_api(cls, item: dict[str, Any]) -> Release:
@@ -60,6 +61,7 @@ class Release:
             draft=bool(item.get("draft")),
             prerelease=bool(item.get("prerelease")),
             url=item.get("html_url", ""),
+            notas=item.get("body") or "",
         )
 
 

@@ -21,7 +21,13 @@ def release(tag, data, draft=False, prerelease=False):
 
 def test_release_da_api_draft_sem_data():
     r = Release.da_api({"tag_name": "v1", "draft": True, "prerelease": False, "published_at": None})
-    assert r.draft and r.publicada_em is None
+    assert r.draft and r.publicada_em is None and r.notas == ""
+
+
+def test_release_da_api_guarda_as_notas():
+    r = Release.da_api({"tag_name": "v1", "draft": False, "prerelease": False,
+                        "published_at": "2025-11-01T00:00:00Z", "body": "## Fixes\n- crash"})
+    assert r.notas == "## Fixes\n- crash"
 
 
 def test_releases_publicadas_exclui_draft_e_opcionalmente_prerelease():
