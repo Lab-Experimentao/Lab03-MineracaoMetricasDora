@@ -170,7 +170,9 @@ def avaliar(cliente, candidato: Candidato, config: Config) -> Avaliacao:
         if n_runs < config.criterios_inclusao.min_workflow_runs:
             return Avaliacao(candidato, POUCOS_RUNS, n_workflows, n_releases, n_runs)
     except ErroAPI as erro:
-        if erro.status is None or erro.status >= 500:
+        # 401 é token inválido ou expirado: não diz nada sobre o repositório, e seguir
+        # descartaria como erro_api todos os candidatos restantes.
+        if erro.status is None or erro.status >= 500 or erro.status == 401:
             raise
         log.warning("%s descartado: %s", repo, erro)
         return Avaliacao(candidato, ERRO_API, detalhe=str(erro))

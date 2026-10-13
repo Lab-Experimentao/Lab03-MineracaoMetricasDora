@@ -52,12 +52,23 @@ A etapa de análise ainda não está implementada (Sprint 03).
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
 
-A coleta de 100 repositórios leva algumas horas. Para rodá-la em segundo plano no macOS
-ou Linux, gravando o log em arquivo e sem o computador dormir (macOS):
+A coleta da amostra de 300 repositórios, sem cache, fez cerca de 24 mil chamadas à API
+e levou em torno de 11 horas de execução (avaliação de 2.160 candidatos no funil e coleta
+completa dos 300). A cota de 5.000 chamadas/hora quase não chegou a ser atingida: o que
+mais pesa é o tempo de resposta da API. Para rodá-la em segundo plano no macOS ou Linux,
+gravando o log em arquivo e sem o computador dormir (macOS):
 
 ```bash
 caffeinate -i nohup python -m pipeline --config config.yaml > coleta.log 2>&1 &
 tail -f coleta.log
+```
+
+No Windows (PowerShell), o processo segue rodando mesmo se o terminal for fechado
+(desative a suspensão do computador enquanto isso):
+
+```powershell
+Start-Process cmd -ArgumentList '/c python -m pipeline --config config.yaml > coleta.log 2>&1' -WindowStyle Hidden
+Get-Content coleta.log -Wait -Tail 5
 ```
 
 ### Cliente HTTP (`coleta/cliente.py`)
@@ -196,7 +207,7 @@ em que reprovar; o motivo fica em `funil.csv`:
 
 | Etapa | Critério | Motivo do descarte |
 |---|---|---|
-| Acesso | O repositório responde na API (não foi apagado ou bloqueado). | `erro_api` |
+| Acesso | O repositório responde na API (não foi apagado ou bloqueado). Token inválido (401), erros 5xx e falhas de rede interrompem a coleta em vez de descartar o candidato. | `erro_api` |
 | Usa Actions | `/actions/workflows` com `total_count > 0`. | `sem_actions` |
 | Releases | ≥ 5 releases publicadas na janela (`draft = false`, sem pré-releases). | `poucas_releases` |
 | Workflow runs | ≥ 50 runs válidos na janela: `event = push` no default branch, `conclusion` de sucesso ou falha. A contagem é exata, feita sobre os runs coletados (o `total_count` com filtro `status` da API subconta). | `poucos_runs` |
@@ -259,7 +270,7 @@ porque entram na Metodologia; os demais são grandes e não são versionados.
 | `tags.csv` | Tags com as datas de autor e de committer do commit apontado. |
 | `compares.csv` | Item de cada cadeia publicado na janela, o anterior, o status do compare (`ok`, `primeira` ou o HTTP do erro, ex.: `404`), a divergência (`ahead`, `behind`...) e o total de commits informado pelo GitHub, para conferir a paginação. |
 | `commits.csv` | Commits de cada compare: SHA, `commit.author.date`, título e mensagem completa (usada na heurística de release corretiva). |
-| `runs.csv` | Workflow runs com workflow, `conclusion`, `run_started_at` e `updated_at`. |
+| `runs.csv` | Workflow runs com workflow, `conclusion`, `run_started_at`, `updated_at` e `run_attempt` (coluna `tentativa`: > 1 indica run reexecutado sem novo commit). |
 | `runs_intervalos.csv` | Consultas de runs feitas, com o `total_count` e se o intervalo ficou truncado. |
 
 ## Métricas (`dados/metricas.csv`)
@@ -302,6 +313,12 @@ distribuição da classificação geral. Para recalcular só as métricas, sem a
 ```bash
 python -m pipeline --config config.yaml --etapas metricas
 ```
+
+## Dicionário de dados
+
+Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos e funil), com nome,
+tipo, unidade e fórmula ou origem na API, estão em
+[`dados/dicionario_dados.md`](dados/dicionario_dados.md).
 
 ## Estrutura
 

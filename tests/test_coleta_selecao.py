@@ -189,6 +189,12 @@ def test_erro_temporario_interrompe_a_coleta():
         sel.avaliar(cliente, candidato(), CONFIG)
 
 
+def test_token_invalido_interrompe_a_coleta():
+    cliente = ClienteFalso({f"/repos/{REPO}/actions/workflows": ErroAPI("Bad credentials", status=401)})
+    with pytest.raises(ErroAPI):
+        sel.avaliar(cliente, candidato(), CONFIG)
+
+
 def test_selecionar_para_quando_a_amostra_enche_e_resume_o_funil():
     config = replace(CONFIG, selecao=replace(CONFIG.selecao, tamanho_amostra=2))
     nomes = ["a/sem-actions", "b/ok", "c/poucas", "d/ok", "e/ok"]
