@@ -42,12 +42,13 @@ Opções:
 | Opção | Descrição |
 |---|---|
 | `--config CAMINHO` | Arquivo de configuração (obrigatório). |
-| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas` e `analise` (padrão: todas). Só a `coleta` exige o token. |
+| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas`, `validacao` e `analise` (padrão: todas). Só a `coleta` exige o token. |
 | `-v`, `--verbose` | Log detalhado. |
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
-`dados/brutos/` e a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`.
-A etapa de análise ainda não está implementada (Sprint 03).
+`dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
+a de **validação** sorteia a amostra-ouro e gera as planilhas de rotulagem
+(`dados/validacao/`). A etapa de análise ainda não está implementada (Sprint 03).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -116,7 +117,7 @@ with ClienteGitHub.de_config(config, token) as cliente:
 | `workflow_runs` | Evento considerado (`push`) e quais `conclusion` contam como sucesso/falha; as demais são ignoradas. |
 | `metricas` | Parâmetros das métricas (ex.: janela de 7 dias da release corretiva). |
 | `coleta` | Pasta de cache, tentativas e backoff para erros temporários. |
-| `validacao_manual` | Semente e tamanhos da amostra-ouro. |
+| `validacao_manual` | Semente e tamanhos da amostra-ouro, e os avaliadores (uma planilha de rotulagem para cada). |
 | `saida` | Pasta dos CSVs gerados. |
 
 Caminhos relativos são resolvidos a partir da pasta do `config.yaml`.
@@ -273,6 +274,33 @@ porque entram na Metodologia; os demais são grandes e não são versionados.
 | `runs.csv` | Workflow runs com workflow, `conclusion`, `run_started_at`, `updated_at` e `run_attempt` (coluna `tentativa`: > 1 indica run reexecutado sem novo commit). |
 | `runs_intervalos.csv` | Consultas de runs feitas, com o `total_count` e se o intervalo ficou truncado. |
 
+### Baixar os dados brutos sem refazer a coleta
+
+Os CSVs da amostra final (300 repositórios, coleta concluída em 2026-10-13) estão no
+release [`dados-s02`](https://github.com/Lab-Experimentao/Lab03-MineracaoMetricasDora/releases/tag/dados-s02),
+no arquivo `dados_brutos_s02.zip` (~157 MB). Com eles não é preciso token nem acessar a API.
+
+1. Baixe o `.zip` pela página do release ou pelo terminal:
+   - com o GitHub CLI: `gh release download dados-s02 --repo Lab-Experimentao/Lab03-MineracaoMetricasDora`
+   - sem o GitHub CLI: `curl -LO https://github.com/Lab-Experimentao/Lab03-MineracaoMetricasDora/releases/download/dados-s02/dados_brutos_s02.zip` (no PowerShell, use `curl.exe`)
+2. Descompacte em `dados/brutos/`:
+
+   ```powershell
+   # Windows (PowerShell)
+   Expand-Archive dados_brutos_s02.zip dados/brutos -Force
+   ```
+
+   ```bash
+   # Linux / macOS
+   unzip -o dados_brutos_s02.zip -d dados/brutos
+   ```
+
+3. (Opcional) Recalcule `dados/metricas.csv` a partir deles:
+   `python -m pipeline --config config.yaml --etapas metricas`.
+
+Atenção: a etapa de coleta regrava `dados/brutos/` a partir do cache. Sem o
+`cache/api.sqlite`, rode só `--etapas metricas` para não refazer a coleta.
+
 ## Métricas (`dados/metricas.csv`)
 
 A etapa de métricas lê `dados/brutos/` e grava `dados/metricas.csv`, versionado no git,
@@ -314,9 +342,34 @@ distribuição da classificação geral. Para recalcular só as métricas, sem a
 python -m pipeline --config config.yaml --etapas metricas
 ```
 
+## Validação manual (`dados/validacao/`)
+
+A etapa de validação sorteia a amostra-ouro (seção 6 do enunciado) e gera uma planilha de
+rotulagem em branco por avaliador. Não acessa a API; lê `dados/metricas.csv` e
+`dados/brutos/` (baixe-os do release `dados-s02` se não tiver feito a coleta):
+
+```bash
+python -m pipeline --config config.yaml --etapas validacao
+```
+
+- **Repositórios:** 60 da amostra final, sorteados com `DataFrame.sample(n=60, random_state=42)`
+  sobre a lista ordenada por nome (`validacao_manual.n_repositorios` e `semente`).
+- **Releases:** 5 por repositório, sorteadas da mesma forma entre as releases da definição
+  principal publicadas na janela (cadeia `release` de `compares.csv`), as mesmas que a
+  heurística de release corretiva classifica.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `amostra_ouro.csv` | As 300 releases sorteadas: repositório, tag, release anterior, data, link da release e link dos commits desde a anterior. Referência para cruzar com os rótulos. |
+| `rotulagem_<avaliador>.xlsx` | Planilha de cada avaliador (`validacao_manual.avaliadores`), com as abas `instrucoes`, `repositorios` (tipo do projeto e se as releases são entregas reais) e `releases` (se a release é corretiva). Os rótulos são escolhidos em listas suspensas. |
+
+A planilha não mostra nenhuma saída da heurística. Cada avaliador preenche a sua sozinho,
+sem consultar os demais, e a commita. Reexecutar a etapa não sobrescreve planilhas que já
+existem; para gerar uma de novo em branco, apague-a antes.
+
 ## Dicionário de dados
 
-Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos e funil), com nome,
+Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
 tipo, unidade e fórmula ou origem na API, estão em
 [`dados/dicionario_dados.md`](dados/dicionario_dados.md).
 
@@ -326,6 +379,7 @@ tipo, unidade e fórmula ou origem na API, estão em
 pipeline/   ponto de entrada (python -m pipeline) e leitura do config/token
 coleta/     acesso à API do GitHub, cache, rate limit e funil de seleção
 metricas/   funções puras de cálculo das métricas DORA
+validacao/  sorteio da amostra-ouro e planilhas de rotulagem
 analise/    análise estatística das RQs
 tests/      testes com pytest
 ```

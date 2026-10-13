@@ -89,6 +89,7 @@ class ValidacaoManual:
     semente: int
     n_repositorios: int
     releases_por_repositorio: int
+    avaliadores: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -174,6 +175,18 @@ def _conclusoes(secao: dict[str, Any], nome: str) -> frozenset[str]:
     return frozenset(str(v) for v in valor)
 
 
+def _avaliadores(secao: dict[str, Any]) -> tuple[str, ...]:
+    valor = _campo(secao, "validacao_manual", "avaliadores")
+    if not isinstance(valor, list) or not valor:
+        raise ErroConfig("'validacao_manual.avaliadores' deve ser uma lista não vazia")
+    nomes = tuple(str(v).strip() for v in valor)
+    if any(not n or not n.replace("_", "").isalnum() for n in nomes):
+        raise ErroConfig("'validacao_manual.avaliadores' aceita só letras, números e _ (vira nome de arquivo)")
+    if len(set(nomes)) != len(nomes):
+        raise ErroConfig("'validacao_manual.avaliadores' tem nomes repetidos")
+    return nomes
+
+
 def carregar_config(caminho: str | Path) -> Config:
     """Lê o YAML em `caminho` e devolve a configuração validada.
 
@@ -237,6 +250,7 @@ def carregar_config(caminho: str | Path) -> Config:
             releases_por_repositorio=_inteiro_positivo(
                 validacao, "validacao_manual", "releases_por_repositorio"
             ),
+            avaliadores=_avaliadores(validacao),
         ),
         saida_dir=base / str(_campo(saida, "saida", "dir")),
     )

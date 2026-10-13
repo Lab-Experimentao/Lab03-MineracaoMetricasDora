@@ -161,6 +161,45 @@ dividido ao meio até caber.
 | `total` | inteiro | runs | `total_count` da consulta. |
 | `truncado` | booleano | — | `1` se o intervalo é um único dia com mais de 1.000 runs (dados incompletos). |
 
+## Validação manual (`dados/validacao/`)
+
+### `amostra_ouro.csv`
+
+As releases sorteadas para a amostra-ouro: 60 repositórios da amostra final
+(`DataFrame.sample(random_state=42)` sobre a lista ordenada por nome) e 5 releases de cada,
+sorteadas da mesma forma entre as da cadeia `release` de `compares.csv`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorio` | texto | — | Repositório sorteado. |
+| `tag` | texto | — | Tag da release sorteada. |
+| `tag_anterior` | texto | — | Release imediatamente anterior na cadeia `release` (por data de publicação); vazio se é a primeira da história. |
+| `publicada_em` | data-hora | — | `published_at` da release. |
+| `url_release` | texto | — | Página da release no GitHub (`html_url`). |
+| `url_commits` | texto | — | `https://github.com/{repo}/compare/{tag_anterior}...{tag}`: commits incluídos na release; vazio sem anterior. |
+
+### `rotulagem_<avaliador>.xlsx`
+
+Planilha preenchida por cada avaliador. A aba `instrucoes` explica os critérios.
+
+Aba `repositorios` (uma linha por repositório da amostra-ouro):
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `repositorio` | texto | — | Repositório. |
+| `url_repositorio` | texto | — | Página do repositório no GitHub. |
+| `tipo_projeto` | texto | `biblioteca/framework`, `aplicação/serviço`, `ferramenta CLI`, `outro` | Tipo do projeto (RQ 06). |
+| `entregas_reais` | texto | `sim`, `não`, `incerto` | As releases representam entregas reais ao usuário? |
+| `observacoes` | texto | livre | Dúvidas e justificativas. |
+
+Aba `releases` (uma linha por release de `amostra_ouro.csv`):
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `repositorio`, `tag`, `tag_anterior`, `publicada_em`, `url_release`, `url_commits` | — | — | Iguais a `amostra_ouro.csv`. |
+| `corretiva` | texto | `sim`, `não` | O objetivo principal da release é corrigir um defeito recente? (RQ 03 b) |
+| `observacoes` | texto | livre | Dúvidas e justificativas. |
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

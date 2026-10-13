@@ -79,6 +79,17 @@ def test_conclusao_em_sucesso_e_falha(tmp_path, dados_config):
         carregar_config(_gravar(tmp_path, dados_config))
 
 
+@pytest.mark.parametrize("avaliadores, mensagem", [
+    ([], "lista não vazia"),
+    (["ana", "ana"], "repetidos"),
+    (["ana/../x"], "letras, números"),
+])
+def test_avaliadores_invalidos(tmp_path, dados_config, avaliadores, mensagem):
+    dados_config["validacao_manual"]["avaliadores"] = avaliadores
+    with pytest.raises(ErroConfig, match=mensagem):
+        carregar_config(_gravar(tmp_path, dados_config))
+
+
 def test_arquivo_inexistente(tmp_path):
     with pytest.raises(ErroConfig, match="não encontrado"):
         carregar_config(tmp_path / "nao_existe.yaml")
@@ -121,6 +132,7 @@ def test_main_le_token_do_env_ao_lado_do_config(tmp_path, dados_config, monkeypa
     # Sem rede nos testes: a coleta só registra o token recebido.
     monkeypatch.setattr("coleta.etapa.executar", lambda config, token: tokens.append(token))
     monkeypatch.setattr("metricas.etapa.executar", lambda config: None)
+    monkeypatch.setattr("validacao.etapa.executar", lambda config: None)
     assert main(["--config", str(_gravar(tmp_path, dados_config))]) == 0
     assert tokens == ["do_arquivo"]
 
@@ -143,3 +155,9 @@ def test_metricas_sem_dados_da_coleta_falha_com_mensagem(tmp_path, dados_config,
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "metricas"]) == 2
     assert "rode antes a etapa de coleta" in caplog.text
+
+
+def test_validacao_sem_dados_falha_com_mensagem(tmp_path, dados_config, caplog):
+    caminho = _gravar(tmp_path, dados_config)
+    assert main(["--config", str(caminho), "--etapas", "validacao"]) == 2
+    assert "rode antes as etapas de coleta e métricas" in caplog.text
