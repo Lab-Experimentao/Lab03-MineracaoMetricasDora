@@ -273,6 +273,33 @@ porque entram na Metodologia; os demais são grandes e não são versionados.
 | `runs.csv` | Workflow runs com workflow, `conclusion`, `run_started_at`, `updated_at` e `run_attempt` (coluna `tentativa`: > 1 indica run reexecutado sem novo commit). |
 | `runs_intervalos.csv` | Consultas de runs feitas, com o `total_count` e se o intervalo ficou truncado. |
 
+### Baixar os dados brutos sem refazer a coleta
+
+Os CSVs da amostra final (300 repositórios, coleta concluída em 2026-10-13) estão no
+release [`dados-s02`](https://github.com/Lab-Experimentao/Lab03-MineracaoMetricasDora/releases/tag/dados-s02),
+no arquivo `dados_brutos_s02.zip` (~157 MB). Com eles não é preciso token nem acessar a API.
+
+1. Baixe o `.zip` pela página do release ou pelo terminal:
+   - com o GitHub CLI: `gh release download dados-s02 --repo Lab-Experimentao/Lab03-MineracaoMetricasDora`
+   - sem o GitHub CLI: `curl -LO https://github.com/Lab-Experimentao/Lab03-MineracaoMetricasDora/releases/download/dados-s02/dados_brutos_s02.zip` (no PowerShell, use `curl.exe`)
+2. Descompacte em `dados/brutos/`:
+
+   ```powershell
+   # Windows (PowerShell)
+   Expand-Archive dados_brutos_s02.zip dados/brutos -Force
+   ```
+
+   ```bash
+   # Linux / macOS
+   unzip -o dados_brutos_s02.zip -d dados/brutos
+   ```
+
+3. (Opcional) Recalcule `dados/metricas.csv` a partir deles:
+   `python -m pipeline --config config.yaml --etapas metricas`.
+
+Atenção: a etapa de coleta regrava `dados/brutos/` a partir do cache. Sem o
+`cache/api.sqlite`, rode só `--etapas metricas` para não refazer a coleta.
+
 ## Métricas (`dados/metricas.csv`)
 
 A etapa de métricas lê `dados/brutos/` e grava `dados/metricas.csv`, versionado no git,
