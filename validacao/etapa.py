@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from pipeline.config import Config
-from validacao.amostra import sortear_releases, sortear_repositorios
+from validacao.amostra import com_textos, sortear_releases, sortear_repositorios
 from validacao.planilha import gerar_planilha
 
 log = logging.getLogger(__name__)
@@ -26,6 +26,15 @@ def _ler(caminho: Path) -> pd.DataFrame:
     return pd.read_csv(caminho, dtype=str, keep_default_na=False)
 
 
+def _titulos_commits(caminho: Path, repositorios: list[str]) -> pd.DataFrame:
+    """Títulos dos commits só dos repositórios sorteados (o commits.csv tem ~500 MB)."""
+    if not caminho.is_file():
+        raise FileNotFoundError(f"{caminho} não encontrado; rode antes as etapas de coleta e métricas")
+    colunas = ["repositorio", "tag_anterior", "tag", "titulo"]
+    blocos = pd.read_csv(caminho, dtype=str, keep_default_na=False, usecols=colunas, chunksize=200_000)
+    return pd.concat([b[b["repositorio"].isin(repositorios)] for b in blocos], ignore_index=True)
+
+
 def arquivo_rotulagem(destino: Path, avaliador: str) -> Path:
     return destino / f"rotulagem_{avaliador}.xlsx"
 
@@ -36,10 +45,11 @@ def executar(config: Config) -> None:
     destino = config.saida_dir / "validacao"
 
     repositorios = sortear_repositorios(_ler(config.saida_dir / "metricas.csv"), cfg.n_repositorios, cfg.semente)
-    amostra = sortear_releases(
-        _ler(brutos / "compares.csv"), _ler(brutos / "releases.csv"),
-        repositorios, cfg.releases_por_repositorio, cfg.semente,
-    )
+    compares, releases = _ler(brutos / "compares.csv"), _ler(brutos / "releases.csv")
+    if "notas" not in releases.columns:
+        raise FileNotFoundError(f"{brutos / 'releases.csv'} sem a coluna 'notas'; rode de novo a etapa de coleta")
+    amostra = sortear_releases(compares, releases, repositorios, cfg.releases_por_repositorio, cfg.semente)
+    para_rotular = com_textos(amostra, compares, releases, _titulos_commits(brutos / "commits.csv", repositorios))
 
     destino.mkdir(parents=True, exist_ok=True)
     amostra.to_csv(destino / ARQUIVO_AMOSTRA, index=False, encoding="utf-8")
@@ -51,5 +61,5 @@ def executar(config: Config) -> None:
         if planilha.exists():
             log.info("%s já existe; mantida (apague-a para gerar de novo em branco)", planilha)
             continue
-        gerar_planilha(planilha, amostra)
+        gerar_planilha(planilha, para_rotular)
         log.info("planilha de rotulagem gravada em %s", planilha)

@@ -138,7 +138,7 @@ ARQUIVOS_COLETA = {
         "repositorio", "url", "estrelas", "linguagem", "criado_em", "contribuidores",
         "branch_padrao", "faixa",
     ]),
-    "releases.csv": (linhas_releases, ["repositorio", "tag", "publicada_em", "draft", "prerelease", "url"]),
+    "releases.csv": (linhas_releases, ["repositorio", "tag", "publicada_em", "draft", "prerelease", "url", "notas"]),
     "tags.csv": (linhas_tags, ["repositorio", "nome", "sha", "data_autor", "data_committer"]),
     "compares.csv": (linhas_compares, [
         "repositorio", "cadeia", "tag", "publicada_em", "tag_anterior", "status", "n_commits",

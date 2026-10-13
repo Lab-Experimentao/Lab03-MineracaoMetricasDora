@@ -267,7 +267,7 @@ porque entram na Metodologia; os demais são grandes e não são versionados.
 | `funil.csv` | Um candidato por linha, com a situação (`incluido` ou o motivo do descarte). |
 | `funil_resumo.csv` | Quantos repositórios restaram após cada etapa do funil. |
 | `repositorios.csv` | Metadados da amostra: estrelas, linguagem, criação, contribuidores, default branch. |
-| `releases.csv` | Todas as releases, com `draft`, `prerelease`, `publicada_em` e link. |
+| `releases.csv` | Todas as releases, com `draft`, `prerelease`, `publicada_em`, link e o texto das release notes (`body`). |
 | `tags.csv` | Tags com as datas de autor e de committer do commit apontado. |
 | `compares.csv` | Item de cada cadeia publicado na janela, o anterior, o status do compare (`ok`, `primeira` ou o HTTP do erro, ex.: `404`), a divergência (`ahead`, `behind`...) e o total de commits informado pelo GitHub, para conferir a paginação. |
 | `commits.csv` | Commits de cada compare: SHA, `commit.author.date`, título e mensagem completa (usada na heurística de release corretiva). |
@@ -361,7 +361,7 @@ python -m pipeline --config config.yaml --etapas validacao
 | Arquivo | Conteúdo |
 |---|---|
 | `amostra_ouro.csv` | As 300 releases sorteadas: repositório, tag, release anterior, data, link da release e link dos commits desde a anterior. Referência para cruzar com os rótulos. |
-| `rotulagem_<avaliador>.xlsx` | Planilha de cada avaliador (`validacao_manual.avaliadores`), com as abas `instrucoes`, `repositorios` (tipo do projeto e se as releases são entregas reais) e `releases` (se a release é corretiva). Os rótulos são escolhidos em listas suspensas. |
+| `rotulagem_<avaliador>.xlsx` | Planilha de cada avaliador (`validacao_manual.avaliadores`), com as abas `instrucoes`, `repositorios` (tipo do projeto e se as releases são entregas reais) e `releases` (se a release é corretiva). Os rótulos são escolhidos em listas suspensas. Para cada release, a planilha já traz o início das release notes (até 1.000 caracteres, de `releases.csv`) e os títulos dos commits desde a anterior (até 20, de `commits.csv`), para julgar sem abrir os links na maioria dos casos. |
 
 A planilha não mostra nenhuma saída da heurística. Cada avaliador preenche a sua sozinho,
 sem consultar os demais, e a commita. Reexecutar a etapa não sobrescreve planilhas que já
