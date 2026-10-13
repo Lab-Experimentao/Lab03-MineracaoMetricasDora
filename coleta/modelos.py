@@ -106,6 +106,9 @@ class RunColetado:
     iniciado_em: datetime | None  # run_started_at
     atualizado_em: datetime  # updated_at
     head_sha: str
+    # run_attempt: a listagem traz só a última tentativa; > 1 indica que o run foi
+    # reexecutado sem novo commit (usado para separar falhas intermitentes no CFR).
+    tentativa: int = 1
 
     @classmethod
     def da_api(cls, item: dict[str, Any]) -> RunColetado:
@@ -119,4 +122,5 @@ class RunColetado:
             iniciado_em=ler_data(item.get("run_started_at")),
             atualizado_em=ler_data(item["updated_at"]),
             head_sha=item.get("head_sha") or "",
+            tentativa=item.get("run_attempt") or 1,
         )

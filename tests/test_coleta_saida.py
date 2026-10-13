@@ -35,6 +35,16 @@ def test_status_dos_compares_por_cadeia():
     assert (linha_commit["tag"], linha_commit["sha"]) == ("v2", "abc")
 
 
+def test_runs_csv_tem_coluna_tentativa():
+    from coleta.modelos import RunColetado
+
+    run = RunColetado(1, 10, "CI", "success", "completed", QUANDO, QUANDO, QUANDO, "abc", tentativa=2)
+    c = ColetaRepositorio(coleta([], {}).candidato, None, [], [], [], {}, [run], [])
+    gerar, colunas = saida.ARQUIVOS_COLETA["runs.csv"]
+    [linha] = gerar([c])
+    assert "tentativa" in colunas and linha["tentativa"] == 2
+
+
 def test_gravar_csv_formata_datas_vazios_e_booleanos(tmp_path):
     caminho = tmp_path / "sub" / "x.csv"
     total = saida.gravar_csv(caminho, [{"a": QUANDO, "b": None, "c": True}], ["a", "b", "c"])

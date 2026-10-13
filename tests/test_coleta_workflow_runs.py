@@ -11,12 +11,12 @@ FALHA = frozenset({"failure", "timed_out", "startup_failure"})
 CAMINHO = "/repos/dono/repo/actions/runs"
 
 
-def run_api(id_, conclusao="success", dia="2025-10-05", workflow=1):
+def run_api(id_, conclusao="success", dia="2025-10-05", workflow=1, tentativa=1):
     return {
         "id": id_, "workflow_id": workflow, "name": "CI", "conclusion": conclusao,
         "status": "completed", "head_sha": f"sha{id_}",
         "created_at": f"{dia}T10:00:00Z", "run_started_at": f"{dia}T10:00:00Z",
-        "updated_at": f"{dia}T10:05:00Z",
+        "updated_at": f"{dia}T10:05:00Z", "run_attempt": tentativa,
     }
 
 
@@ -93,6 +93,16 @@ def test_dia_unico_acima_do_teto_fica_marcado_como_truncado():
     cliente = ClienteFalso({CAMINHO: [{"total_count": 1200, "workflow_runs": [run_api(1)]}]})
     _, intervalos = wr.coletar_runs(cliente, "dono/repo", "main", "push", janela)
     assert intervalos[0].truncado
+
+
+def test_tentativa_vem_do_run_attempt(janela):
+    sem_campo = run_api(3)
+    del sem_campo["run_attempt"]
+    cliente = ClienteFalso({CAMINHO: [{"total_count": 3, "workflow_runs": [
+        run_api(1), run_api(2, tentativa=3), sem_campo,
+    ]}]})
+    runs, _ = wr.coletar_runs(cliente, "dono/repo", "main", "push", Janela(date(2025, 10, 1), date(2025, 10, 31)))
+    assert [r.tentativa for r in runs] == [1, 3, 1]
 
 
 def test_contar_validos_ignora_cancelados_e_em_andamento(janela):

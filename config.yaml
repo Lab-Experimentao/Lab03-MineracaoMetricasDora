@@ -26,7 +26,7 @@ selecao:
   # amostra encher; os que sobram entram no funil como "não avaliados".
   semente: 42
   # Quantos repositórios devem restar na amostra final (S01: 100, S02: >= 300).
-  tamanho_amostra: 100
+  tamanho_amostra: 300
 
 # Critério mínimo de inclusão, contado dentro da janela (seção 3).
 criterios_inclusao:

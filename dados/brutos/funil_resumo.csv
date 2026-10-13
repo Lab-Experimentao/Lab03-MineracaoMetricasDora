@@ -1,8 +1,8 @@
 etapa,restantes,descartados,motivo_descarte
 candidatos,60043,0,
-avaliados,753,59290,nao_avaliado
-acessiveis_pela_api,753,0,erro_api
-usam_actions,422,331,sem_actions
-com_min_releases,142,280,poucas_releases
-com_min_runs_validos,100,42,poucos_runs
-amostra_final,100,0,
+avaliados,2160,57883,nao_avaliado
+acessiveis_pela_api,2160,0,erro_api
+usam_actions,1238,922,sem_actions
+com_min_releases,411,827,poucas_releases
+com_min_runs_validos,300,111,poucos_runs
+amostra_final,300,0,
