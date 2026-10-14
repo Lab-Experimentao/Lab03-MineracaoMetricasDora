@@ -1,0 +1,15 @@
+versao,classe,suporte,previstos,precisao,recall,f1
+v1,biblioteca/framework,21,17,0.7647,0.619,0.6842
+v1,aplicação/serviço,27,37,0.7027,0.963,0.8125
+v1,ferramenta CLI,7,3,0.6667,0.2857,0.4
+v1,outro,5,3,1.0,0.6,0.75
+v1,macro,60,60,0.7835,0.6169,0.6617
+v1,ponderada,60,60,0.745,0.7333,0.7143
+v1,acuracia,60,60,0.7333,0.7333,0.7333
+v2,biblioteca/framework,21,21,0.9524,0.9524,0.9524
+v2,aplicação/serviço,27,29,0.931,1.0,0.9643
+v2,ferramenta CLI,7,6,1.0,0.8571,0.9231
+v2,outro,5,4,1.0,0.8,0.8889
+v2,macro,60,60,0.9709,0.9024,0.9322
+v2,ponderada,60,60,0.9523,0.95,0.949
+v2,acuracia,60,60,0.95,0.95,0.95

@@ -1,0 +1,301 @@
+repositorio,tipo_heuristica,tipo_consenso,tipo_projeto,origem
+0xMassi/webclaw,aplicação/serviço,,aplicação/serviço,heuristica
+2dust/v2rayNG,aplicação/serviço,,aplicação/serviço,heuristica
+AIDotNet/OpenDeepWiki,aplicação/serviço,,aplicação/serviço,heuristica
+Aethersailor/SubConverter-Extended,aplicação/serviço,,aplicação/serviço,heuristica
+AprilNEA/OpenLogi,biblioteca/framework,,biblioteca/framework,heuristica
+AsyncHttpClient/async-http-client,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+AzureAD/microsoft-authentication-library-for-dotnet,biblioteca/framework,,biblioteca/framework,heuristica
+Bitterbot-AI/bitterbot-desktop,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+Blackymas/NSPanel_HA_Blueprint,aplicação/serviço,,aplicação/serviço,heuristica
+Brooooooklyn/canvas,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+CFPAOrg/Minecraft-Mod-Language-Package,outro,,outro,heuristica
+CesiumGS/cesium,biblioteca/framework,,biblioteca/framework,heuristica
+ClickHouse/clickhouse-java,aplicação/serviço,,aplicação/serviço,heuristica
+ColorlibHQ/AdminLTE,aplicação/serviço,,aplicação/serviço,heuristica
+DataDog/integrations-core,aplicação/serviço,,aplicação/serviço,heuristica
+DuendeSoftware/products,biblioteca/framework,,biblioteca/framework,heuristica
+EchoMusicApp/Echo-Music,aplicação/serviço,,aplicação/serviço,heuristica
+EmbarkStudios/cargo-deny,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+FailproofAI/failproofai,biblioteca/framework,,biblioteca/framework,heuristica
+GreptimeTeam/greptimedb,aplicação/serviço,,aplicação/serviço,heuristica
+HMBSbige/NatTypeTester,biblioteca/framework,,biblioteca/framework,heuristica
+HuolalaTech/page-spy-web,aplicação/serviço,,aplicação/serviço,heuristica
+Hypostasis-Cat/HypoMux,aplicação/serviço,,aplicação/serviço,heuristica
+Icalingua-plus-plus/Icalingua-plus-plus,biblioteca/framework,,biblioteca/framework,heuristica
+IfcOpenShell/IfcOpenShell,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+ItzCrazyKns/Vane,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+Javis603/token-monitor,aplicação/serviço,,aplicação/serviço,heuristica
+Jeffallan/claude-skills,aplicação/serviço,,aplicação/serviço,heuristica
+KelvinTegelaar/CIPP,aplicação/serviço,,aplicação/serviço,heuristica
+Kianmhz/GooseRelayVPN,aplicação/serviço,,aplicação/serviço,heuristica
+Koenkk/zigbee-herdsman-converters,biblioteca/framework,,biblioteca/framework,heuristica
+Kuberwastaken/claurst,ferramenta CLI,,ferramenta CLI,heuristica
+LegadoTeam/legado,aplicação/serviço,,aplicação/serviço,heuristica
+Legcord/Legcord,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+MGdaasLab/WHartTest,aplicação/serviço,,aplicação/serviço,heuristica
+MRPT/mrpt,biblioteca/framework,,biblioteca/framework,heuristica
+Mesh-LLM/mesh-llm,ferramenta CLI,,ferramenta CLI,heuristica
+ModelCloud/GPTQModel,biblioteca/framework,,biblioteca/framework,heuristica
+NVIDIA/garak,biblioteca/framework,,biblioteca/framework,heuristica
+NativeScript/NativeScript,aplicação/serviço,,aplicação/serviço,heuristica
+Neoteroi/BlackSheep,biblioteca/framework,,biblioteca/framework,heuristica
+NepipenkoIgor/ngx-mask,biblioteca/framework,,biblioteca/framework,heuristica
+OpenBMB/StaffDeck,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+OpenPipe/ART,biblioteca/framework,,biblioteca/framework,heuristica
+OpenShot/openshot-qt,aplicação/serviço,,aplicação/serviço,heuristica
+PCSX2/pcsx2,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+RongleCat/grok-app,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+Shelf-nu/shelf.nu,aplicação/serviço,,aplicação/serviço,heuristica
+Simon-He95/markstream-vue,biblioteca/framework,,biblioteca/framework,heuristica
+SimonSchubert/Kai,aplicação/serviço,,aplicação/serviço,heuristica
+SpacingBat3/WebCord,aplicação/serviço,,aplicação/serviço,heuristica
+Taywee/args,biblioteca/framework,,biblioteca/framework,heuristica
+TokenRhythm/opensquilla,aplicação/serviço,,aplicação/serviço,heuristica
+TracecatHQ/tracecat,aplicação/serviço,,aplicação/serviço,heuristica
+TraderAlice/OpenAlice,aplicação/serviço,,aplicação/serviço,heuristica
+Uniswap/interface,aplicação/serviço,,aplicação/serviço,heuristica
+VibiumDev/vibium,aplicação/serviço,,aplicação/serviço,heuristica
+VoltAgent/voltagent,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+WiseLibs/better-sqlite3,biblioteca/framework,,biblioteca/framework,heuristica
+Yazelix/nova,ferramenta CLI,,ferramenta CLI,heuristica
+YishenTu/claudian,outro,outro,outro,consenso
+YunaiV/ruoyi-vue-pro,aplicação/serviço,,aplicação/serviço,heuristica
+aardappel/treesheets,aplicação/serviço,,aplicação/serviço,heuristica
+aeron-io/aeron,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+agavra/tuicr,ferramenta CLI,,ferramenta CLI,heuristica
+ail-project/ail-framework,biblioteca/framework,,biblioteca/framework,heuristica
+algorand/go-algorand,biblioteca/framework,,biblioteca/framework,heuristica
+alibaba/spring-ai-alibaba,biblioteca/framework,,biblioteca/framework,heuristica
+alliedmodders/sourcemod,outro,,outro,heuristica
+antonbabenko/pre-commit-terraform,aplicação/serviço,,aplicação/serviço,heuristica
+apache/beam,biblioteca/framework,,biblioteca/framework,heuristica
+apache/casbin,biblioteca/framework,,biblioteca/framework,heuristica
+apache/polaris,aplicação/serviço,,aplicação/serviço,heuristica
+apache/pulsar,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+aseprite/aseprite,aplicação/serviço,,aplicação/serviço,heuristica
+assistant-ui/assistant-ui,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+aws-actions/amazon-ecr-login,aplicação/serviço,outro,outro,consenso
+ayangweb/BongoCat,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+benoitc/hackney,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+betaflight/betaflight,aplicação/serviço,,aplicação/serviço,heuristica
+betterleaks/betterleaks,ferramenta CLI,,ferramenta CLI,heuristica
+bivlked/amneziawg-installer,aplicação/serviço,,aplicação/serviço,heuristica
+blakeblackshear/frigate-hass-integration,aplicação/serviço,,aplicação/serviço,heuristica
+browserbase/stagehand,biblioteca/framework,,biblioteca/framework,heuristica
+bytebase/bytebase,aplicação/serviço,,aplicação/serviço,heuristica
+bytechefhq/bytechef,aplicação/serviço,,aplicação/serviço,heuristica
+can1357/oh-my-pi,ferramenta CLI,,ferramenta CLI,heuristica
+can4hou6joeng4/boss-agent-cli,ferramenta CLI,,ferramenta CLI,heuristica
+cberner/redb,biblioteca/framework,,biblioteca/framework,heuristica
+charmbracelet/wish,aplicação/serviço,,aplicação/serviço,heuristica
+cinnyapp/cinny,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+clappr/clappr,aplicação/serviço,,aplicação/serviço,heuristica
+cloud-in-a-bottle/cloud-in-a-bottle,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+cloudflare/mcp-server-cloudflare,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+cloudflare/terraform-provider-cloudflare,aplicação/serviço,,aplicação/serviço,heuristica
+collective/icalendar,biblioteca/framework,,biblioteca/framework,heuristica
+commons-app/apps-android-commons,aplicação/serviço,,aplicação/serviço,heuristica
+community-shaders/skyrim-community-shaders,outro,outro,outro,consenso
+connectbot/connectbot,biblioteca/framework,,biblioteca/framework,heuristica
+containerd/runwasi,biblioteca/framework,,biblioteca/framework,heuristica
+crimx/ext-saladict,outro,,outro,heuristica
+daymade/claude-code-skills,aplicação/serviço,,aplicação/serviço,heuristica
+dchapyshev/aspia,aplicação/serviço,,aplicação/serviço,heuristica
+defold/defold,aplicação/serviço,,aplicação/serviço,heuristica
+directus/directus,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+django-commons/django-debug-toolbar,aplicação/serviço,,aplicação/serviço,heuristica
+docker/docker-agent,ferramenta CLI,,ferramenta CLI,heuristica
+dolanmiu/docx,biblioteca/framework,,biblioteca/framework,heuristica
+doobidoo/mcp-memory-service,aplicação/serviço,,aplicação/serviço,heuristica
+dotnet/efcore,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+dotnet/orleans,biblioteca/framework,,biblioteca/framework,heuristica
+dotnetcore/BootstrapBlazor,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+doublecmd/doublecmd,aplicação/serviço,,aplicação/serviço,heuristica
+dynamoose/dynamoose,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+egoist/waku,aplicação/serviço,,aplicação/serviço,heuristica
+elalish/manifold,biblioteca/framework,,biblioteca/framework,heuristica
+elbywan/wretch,biblioteca/framework,,biblioteca/framework,heuristica
+elvisun/newsjack,aplicação/serviço,,aplicação/serviço,heuristica
+embeddings-benchmark/mteb,biblioteca/framework,,biblioteca/framework,heuristica
+ergebnis/composer-normalize,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+errbit/errbit,aplicação/serviço,,aplicação/serviço,heuristica
+erxes/erxes,aplicação/serviço,,aplicação/serviço,heuristica
+farag2/Sophia-Script-for-Windows,aplicação/serviço,,aplicação/serviço,heuristica
+filamentphp/filament,aplicação/serviço,,aplicação/serviço,heuristica
+firebase/firebaseui-web,biblioteca/framework,,biblioteca/framework,heuristica
+firecrawl/anydoc,biblioteca/framework,,biblioteca/framework,heuristica
+firefox-devtools/profiler,ferramenta CLI,,ferramenta CLI,heuristica
+fivetran/great_expectations,biblioteca/framework,,biblioteca/framework,heuristica
+fynnfluegge/agtx,aplicação/serviço,,aplicação/serviço,heuristica
+gerbera/gerbera,aplicação/serviço,,aplicação/serviço,heuristica
+gildas-lormeau/zip.js,biblioteca/framework,,biblioteca/framework,heuristica
+github/codeql-action,aplicação/serviço,,aplicação/serviço,heuristica
+glide-browser/glide,aplicação/serviço,,aplicação/serviço,heuristica
+golangci/golangci-lint,biblioteca/framework,,biblioteca/framework,heuristica
+gomlx/gomlx,biblioteca/framework,,biblioteca/framework,heuristica
+google-ai-edge/gallery,aplicação/serviço,,aplicação/serviço,heuristica
+google/adk-java,biblioteca/framework,,biblioteca/framework,heuristica
+gptme/gptme,ferramenta CLI,,ferramenta CLI,heuristica
+grafana/tanka,aplicação/serviço,,aplicação/serviço,heuristica
+graph-gophers/graphql-go,aplicação/serviço,,aplicação/serviço,heuristica
+groupultra/telegram-search,ferramenta CLI,,ferramenta CLI,heuristica
+guokaigdg/animal-island-ui,biblioteca/framework,,biblioteca/framework,heuristica
+hashicorp/terraform,aplicação/serviço,,aplicação/serviço,heuristica
+helmfile/helmfile,aplicação/serviço,,aplicação/serviço,heuristica
+hexclave/hexclave,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+higress-group/higress,aplicação/serviço,,aplicação/serviço,heuristica
+ignite/cli,ferramenta CLI,,ferramenta CLI,heuristica
+ijl/orjson,biblioteca/framework,,biblioteca/framework,heuristica
+infinispan/infinispan,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+injaneity/pi-computer-use,aplicação/serviço,,aplicação/serviço,heuristica
+internetarchive/bookreader,aplicação/serviço,,aplicação/serviço,heuristica
+invertase/react-native-firebase,aplicação/serviço,,aplicação/serviço,heuristica
+itchio/itch,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+iyear/tdl,biblioteca/framework,,biblioteca/framework,heuristica
+james-6-23/codex2api,aplicação/serviço,,aplicação/serviço,heuristica
+jax-ml/jax,biblioteca/framework,,biblioteca/framework,heuristica
+jetkvm/kvm,aplicação/serviço,,aplicação/serviço,heuristica
+jolicode/JoliNotif,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+jpadilla/pyjwt,biblioteca/framework,,biblioteca/framework,heuristica
+jub0t/concat,aplicação/serviço,,aplicação/serviço,heuristica
+keephq/keep,aplicação/serviço,,aplicação/serviço,heuristica
+kestra-io/kestra,aplicação/serviço,,aplicação/serviço,heuristica
+knadh/oat,biblioteca/framework,,biblioteca/framework,heuristica
+knex/knex,aplicação/serviço,,aplicação/serviço,heuristica
+krille-chan/fluffychat,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+kubeai-project/kubeai,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+kubeshop/testkube,aplicação/serviço,,aplicação/serviço,heuristica
+laravel/telescope,biblioteca/framework,,biblioteca/framework,heuristica
+lesismal/nbio,aplicação/serviço,,aplicação/serviço,heuristica
+libsdl-org/SDL,aplicação/serviço,,aplicação/serviço,heuristica
+lightningnetwork/lnd,aplicação/serviço,,aplicação/serviço,heuristica
+liip/LiipImagineBundle,biblioteca/framework,,biblioteca/framework,heuristica
+liqotech/liqo,aplicação/serviço,,aplicação/serviço,heuristica
+longbridge/gpui-kit,aplicação/serviço,,aplicação/serviço,heuristica
+loopx-project/loopx,biblioteca/framework,,biblioteca/framework,heuristica
+ludo-technologies/pyscn,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+margelo/react-native-nitro-fetch,biblioteca/framework,,biblioteca/framework,heuristica
+mattpocock/sandcastle,biblioteca/framework,,biblioteca/framework,heuristica
+melandlabs/openloomi,aplicação/serviço,,aplicação/serviço,heuristica
+meshery/meshery,aplicação/serviço,,aplicação/serviço,heuristica
+meta-pytorch/botorch,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+micasa-dev/micasa,ferramenta CLI,,ferramenta CLI,heuristica
+microsoft/qdk,aplicação/serviço,biblioteca/framework,biblioteca/framework,consenso
+middyjs/middy,biblioteca/framework,,biblioteca/framework,heuristica
+midwayjs/midway,biblioteca/framework,,biblioteca/framework,heuristica
+mike-bronner/laravel-model-caching,biblioteca/framework,,biblioteca/framework,heuristica
+mikeyobrien/ralph-orchestrator,biblioteca/framework,,biblioteca/framework,heuristica
+milind-soni/OpenMausBot,aplicação/serviço,,aplicação/serviço,heuristica
+mixpanel/mixpanel-android,biblioteca/framework,,biblioteca/framework,heuristica
+moby/buildkit,biblioteca/framework,,biblioteca/framework,heuristica
+mongodb/kingfisher,ferramenta CLI,,ferramenta CLI,heuristica
+mozilla-mobile/firefox-ios,aplicação/serviço,,aplicação/serviço,heuristica
+mullvad/mullvadvpn-app,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+mymmrac/telego,biblioteca/framework,,biblioteca/framework,heuristica
+nager/Nager.Date,biblioteca/framework,,biblioteca/framework,heuristica
+nginx/nginx,aplicação/serviço,,aplicação/serviço,heuristica
+nilsteampassnet/TeamPass,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+nisshi-io/nisshi,aplicação/serviço,,aplicação/serviço,heuristica
+nkzw-tech/codiff,ferramenta CLI,,ferramenta CLI,heuristica
+nottelabs/notte,aplicação/serviço,,aplicação/serviço,heuristica
+nuclio/nuclio,aplicação/serviço,,aplicação/serviço,heuristica
+nzbdav-dev/nzbdav,aplicação/serviço,,aplicação/serviço,heuristica
+ocaml/merlin,aplicação/serviço,,aplicação/serviço,heuristica
+ohler55/oj,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+oliver006/redis_exporter,aplicação/serviço,,aplicação/serviço,heuristica
+open-multi-agent/open-multi-agent,aplicação/serviço,,aplicação/serviço,heuristica
+open-slide/open-slide,biblioteca/framework,,biblioteca/framework,heuristica
+openclaw/Peekaboo,aplicação/serviço,,aplicação/serviço,heuristica
+openclaw/acpx,biblioteca/framework,,biblioteca/framework,heuristica
+openlit/openlit,aplicação/serviço,,aplicação/serviço,heuristica
+openmls/openmls,biblioteca/framework,,biblioteca/framework,heuristica
+openmm/openmm,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+orhun/ratty,ferramenta CLI,,ferramenta CLI,heuristica
+ormar-orm/ormar,biblioteca/framework,,biblioteca/framework,heuristica
+ossrs/srs,aplicação/serviço,,aplicação/serviço,heuristica
+pH7Software/pH7-Social-Dating-CMS,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+petyosi/react-virtuoso,biblioteca/framework,,biblioteca/framework,heuristica
+pf4j/pf4j,biblioteca/framework,,biblioteca/framework,heuristica
+pgrundev/pgbot,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+pionxzh/wakaru,ferramenta CLI,,ferramenta CLI,heuristica
+pixijs/pixijs,aplicação/serviço,,aplicação/serviço,heuristica
+plasma-umass/scalene,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+protobuf-net/protobuf-net,biblioteca/framework,,biblioteca/framework,heuristica
+proxysoul/Empryo,ferramenta CLI,,ferramenta CLI,heuristica
+punkpeye/mcp-remote,aplicação/serviço,,aplicação/serviço,heuristica
+pydantic/monty,biblioteca/framework,,biblioteca/framework,heuristica
+qiutongxue/oba-live-tool,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+qmhc/unplugin-dts,biblioteca/framework,,biblioteca/framework,heuristica
+rRemix/APlayer,aplicação/serviço,,aplicação/serviço,heuristica
+rachelos/we-mp-rss,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+radzenhq/radzen-blazor,biblioteca/framework,,biblioteca/framework,heuristica
+raphaelmansuy/edgequake,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+react-component/tree,biblioteca/framework,,biblioteca/framework,heuristica
+react-cosmos/react-cosmos,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+remeda/remeda,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+rivet-dev/agents,aplicação/serviço,,aplicação/serviço,heuristica
+rmcrackan/Libation,biblioteca/framework,,biblioteca/framework,heuristica
+run-llama/liteparse,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+runfinch/finch,ferramenta CLI,ferramenta CLI,ferramenta CLI,consenso
+sass/dart-sass,biblioteca/framework,ferramenta CLI,ferramenta CLI,consenso
+schollz/croc,ferramenta CLI,,ferramenta CLI,heuristica
+seachicken/gh-poi,ferramenta CLI,,ferramenta CLI,heuristica
+sentry-kubernetes/charts,aplicação/serviço,,aplicação/serviço,heuristica
+shellhub-io/shellhub,aplicação/serviço,,aplicação/serviço,heuristica
+shikijs/shiki,biblioteca/framework,,biblioteca/framework,heuristica
+shinkuan/Akagi,aplicação/serviço,,aplicação/serviço,heuristica
+sktime/sktime,biblioteca/framework,,biblioteca/framework,heuristica
+slopus/happy,aplicação/serviço,,aplicação/serviço,heuristica
+snc/SncRedisBundle,biblioteca/framework,,biblioteca/framework,heuristica
+softprops/action-gh-release,outro,outro,outro,consenso
+softwaremill/sttp,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+sozercan/kaset,aplicação/serviço,,aplicação/serviço,heuristica
+spiral/framework,biblioteca/framework,,biblioteca/framework,heuristica
+spring-projects/spring-kafka,aplicação/serviço,,aplicação/serviço,heuristica
+steipete/CodexBar,ferramenta CLI,,ferramenta CLI,heuristica
+steipete/RepoBar,ferramenta CLI,,ferramenta CLI,heuristica
+storybookjs/react-native,biblioteca/framework,,biblioteca/framework,heuristica
+streamich/memfs,biblioteca/framework,,biblioteca/framework,heuristica
+stripe/stripe-android,biblioteca/framework,,biblioteca/framework,heuristica
+stripe/stripe-go,biblioteca/framework,,biblioteca/framework,heuristica
+sunny0826/kubecm,ferramenta CLI,,ferramenta CLI,heuristica
+supabase/cli,ferramenta CLI,,ferramenta CLI,heuristica
+supabase/supabase-js,biblioteca/framework,,biblioteca/framework,heuristica
+surveyjs/survey-library,biblioteca/framework,,biblioteca/framework,heuristica
+sveltia/sveltia-cms,aplicação/serviço,,aplicação/serviço,heuristica
+symfony/polyfill,biblioteca/framework,,biblioteca/framework,heuristica
+tailwindlabs/prettier-plugin-tailwindcss,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+tddworks/baguette,aplicação/serviço,,aplicação/serviço,heuristica
+testcontainers/testcontainers-node,biblioteca/framework,,biblioteca/framework,heuristica
+theopfr/somo,biblioteca/framework,,biblioteca/framework,heuristica
+timothymiller/cloudflare-ddns,aplicação/serviço,,aplicação/serviço,heuristica
+tinacms/tinacms,aplicação/serviço,,aplicação/serviço,heuristica
+toon-format/toon,biblioteca/framework,,biblioteca/framework,heuristica
+tracewayapp/traceway,aplicação/serviço,,aplicação/serviço,heuristica
+treadiehq/port-kill,aplicação/serviço,,aplicação/serviço,heuristica
+twigphp/Twig,biblioteca/framework,,biblioteca/framework,heuristica
+uiua-lang/uiua,ferramenta CLI,,ferramenta CLI,heuristica
+unfoldadmin/django-unfold,aplicação/serviço,,aplicação/serviço,heuristica
+ustctug/ustcthesis,outro,outro,outro,consenso
+veeso/termscp,ferramenta CLI,,ferramenta CLI,heuristica
+vercel/turborepo,biblioteca/framework,,biblioteca/framework,heuristica
+vicanso/zedis,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+violentmonkey/violentmonkey,aplicação/serviço,,aplicação/serviço,heuristica
+vitalik/django-ninja,biblioteca/framework,,biblioteca/framework,heuristica
+vivizzz007/vivi-music,aplicação/serviço,,aplicação/serviço,heuristica
+vn7n24fzkq/github-profile-summary-cards,outro,,outro,heuristica
+vue-stripe/vue-stripe,biblioteca/framework,biblioteca/framework,biblioteca/framework,consenso
+webp-sh/webp_server_go,aplicação/serviço,,aplicação/serviço,heuristica
+whale4113/cloud-document-converter,outro,,outro,heuristica
+wk42worldworld/cybercode,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+xingkongliang/skills-manager,aplicação/serviço,,aplicação/serviço,heuristica
+yairm210/Unciv,aplicação/serviço,,aplicação/serviço,heuristica
+yifanfeng97/Hyper-Extract,ferramenta CLI,,ferramenta CLI,heuristica
+zalando/logbook,biblioteca/framework,,biblioteca/framework,heuristica
+zdharma-continuum/zinit,aplicação/serviço,,aplicação/serviço,heuristica
+zereight/gitlab-mcp,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+zhangxiangliang/stock-api,aplicação/serviço,,aplicação/serviço,heuristica
+zhblue/hustoj,aplicação/serviço,aplicação/serviço,aplicação/serviço,consenso
+zhu1090093659/dsh-web,aplicação/serviço,,aplicação/serviço,heuristica
+zoidsh/meru,aplicação/serviço,,aplicação/serviço,heuristica

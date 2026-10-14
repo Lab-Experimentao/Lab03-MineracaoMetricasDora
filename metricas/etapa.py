@@ -33,6 +33,8 @@ def executar(config: Config) -> None:
         config.janela.semanas,
         runs_cfg.conclusoes_sucesso,
         runs_cfg.conclusoes_falha,
+        fim_janela=config.janela.fim_exclusivo_dt,
+        dias_corretiva=config.metricas.janela_release_corretiva_dias,
     )
 
     destino = config.saida_dir / ARQUIVO_SAIDA

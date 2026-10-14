@@ -1,5 +1,6 @@
 """Etapa de validação: sorteia a amostra-ouro, gera uma planilha de rotulagem por avaliador
-e, quando todas estão preenchidas, calcula a concordância e o consenso.
+e, quando todas estão preenchidas, calcula a concordância e o consenso. Com o consenso
+pronto, avalia as versões da heurística de release corretiva (precisão, recall e F1).
 
 Saída em `<saida.dir>/validacao/`. Não acessa a API: lê `metricas.csv` e os CSVs brutos.
 Planilhas já existentes não são sobrescritas, para não apagar rótulos preenchidos.
@@ -14,6 +15,7 @@ import pandas as pd
 
 from pipeline.config import Config
 from validacao import concordancia as co
+from validacao import heuristica as he
 from validacao.amostra import com_textos, sortear_releases, sortear_repositorios
 from validacao.planilha import gerar_planilha
 
@@ -23,6 +25,8 @@ ARQUIVO_AMOSTRA = "amostra_ouro.csv"
 ARQUIVO_DESEMPATES = "desempates.csv"
 ARQUIVO_CONCORDANCIA = "concordancia.csv"
 ARQUIVOS_CONSENSO = {"repositorios": "consenso_repositorios.csv", "releases": "consenso_releases.csv"}
+ARQUIVO_HEURISTICA = "heuristica_versoes.csv"
+ARQUIVO_ERROS_HEURISTICA = "heuristica_erros.csv"
 
 
 def _ler(caminho: Path) -> pd.DataFrame:
@@ -54,6 +58,7 @@ def executar(config: Config) -> None:
     else:
         gerar_planilhas(config, destino)
     calcular_concordancia(config, destino)
+    avaliar_heuristica(config, destino)
 
 
 def gerar_planilhas(config: Config, destino: Path) -> None:
@@ -113,3 +118,28 @@ def calcular_concordancia(config: Config, destino: Path) -> None:
                 item = " ".join(linha[c] for c in co.CHAVES[aba])
                 log.warning("sem maioria em %s de %s: decida em reunião e registre em %s",
                             coluna.removesuffix("_regra"), item, arquivo_desempates)
+
+
+def avaliar_heuristica(config: Config, destino: Path) -> None:
+    """Precisão, recall e F1 de cada versão da heurística frente ao consenso das releases."""
+    arquivo_consenso = destino / ARQUIVOS_CONSENSO["releases"]
+    if not arquivo_consenso.is_file():
+        log.warning("%s não encontrado; heurística de release corretiva não avaliada", arquivo_consenso)
+        return
+    consenso = _ler(arquivo_consenso)
+    pendentes = consenso["corretiva_regra"] == co.PENDENTE
+    if pendentes.any():
+        log.warning("%d releases sem consenso ficaram fora da avaliação da heurística", pendentes.sum())
+        consenso = consenso[~pendentes].reset_index(drop=True)
+    arquivo_commits = config.saida_dir / "brutos" / "commits.csv"
+    if not arquivo_commits.is_file():
+        log.warning("%s não encontrado; heurística de release corretiva não avaliada", arquivo_commits)
+        return
+    commits = _titulos_commits(arquivo_commits, sorted(consenso["repositorio"].unique()))
+
+    resumo, erros = he.avaliar_versoes(consenso, commits)
+    resumo.to_csv(destino / ARQUIVO_HEURISTICA, index=False, encoding="utf-8")
+    erros.to_csv(destino / ARQUIVO_ERROS_HEURISTICA, index=False, encoding="utf-8")
+    for r in resumo.itertuples():
+        log.info("heurística %s: precisão %.3f, recall %.3f, F1 %.3f%s", r.versao, r.precisao, r.recall, r.f1,
+                 "" if r.f1 >= he.F1_MINIMO else f" (abaixo de {he.F1_MINIMO})")

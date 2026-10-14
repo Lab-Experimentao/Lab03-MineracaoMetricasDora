@@ -42,13 +42,15 @@ Opções:
 | Opção | Descrição |
 |---|---|
 | `--config CAMINHO` | Arquivo de configuração (obrigatório). |
-| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas`, `validacao` e `analise` (padrão: todas). Só a `coleta` exige o token. |
+| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas`, `validacao`, `tipo_projeto` e `analise` (padrão: todas). A `coleta` exige o token; a `tipo_projeto`, só se faltar coletar algum perfil. |
 | `-v`, `--verbose` | Log detalhado. |
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
 `dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
-preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A etapa de análise ainda não está implementada (Sprint 03).
+preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
+classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
+outro (`dados/tipo_projeto.csv`). A etapa de análise ainda não está implementada (Sprint 03).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -321,6 +323,9 @@ As funções de cálculo ficam em `metricas/` e têm testes com os exemplos do e
 | `commits_data_futura` | commits | Commits com data de autor posterior à release, ignorados (rebase, cherry-pick). |
 | `cfr_ci` | proporção (0–1) | (a) Runs com falha ÷ (falhas + sucessos); `cancelled`, `skipped` etc. não entram. |
 | `runs_falha`, `runs_sucesso`, `runs_ignorados` | runs | Contagens usadas no CFR. |
+| `cfr_entrega` | proporção (0–1) | (b) Releases seguidas por uma release corretiva em até 7 dias ÷ releases avaliadas. Não entra na classificação C1. |
+| `releases_falharam`, `releases_avaliadas_cfr`, `releases_censuradas_cfr` | releases | Contagens do CFR (b). As releases dos últimos 7 dias da janela são censuradas: ficam fora do denominador. |
+| `releases_corretivas` | releases | Releases marcadas como corretivas pela heurística (base da rework rate, RQ 08). |
 | `recuperacao_horas` | horas | Mediana dos episódios de falha de todos os workflows: da primeira falha após um sucesso (`run_started_at`) ao próximo sucesso do mesmo workflow (`updated_at`). |
 | `episodios_recuperados`, `episodios_censurados` | episódios | Episódios encerrados e não encerrados até o fim da janela. |
 | `proporcao_censurados` | proporção (0–1) | Censurados ÷ total de episódios. |
@@ -400,6 +405,107 @@ mesma categoria: o kappa desconta a concordância esperada por acaso, que nesse 
 alta. É o que acontece em `entregas_reais`, em que a resposta é `sim` para quase todos os
 repositórios.
 
+### Heurística de release corretiva (CFR b)
+
+O CFR (b) considera que uma release falhou quando ela é seguida, em até 7 dias
+(`metricas.janela_release_corretiva_dias`), por uma release corretiva. Basta qualquer release
+corretiva nesse prazo, não só a imediatamente seguinte. As releases publicadas nos últimos 7
+dias da janela ficam fora do denominador (censura). O código está em `metricas/corretiva.py`.
+
+A heurística que decide se uma release é corretiva foi validada contra o consenso das 300
+releases da amostra-ouro (126 corretivas), com `precision_recall_fscore_support` do
+scikit-learn. A mesma etapa de validação recalcula tudo e grava `heuristica_versoes.csv` e
+`heuristica_erros.csv` (precisa de `dados/brutos/commits.csv`). Cada versão testada:
+
+| Versão | Regra | Precisão | Recall | F1 |
+|---|---|---|---|---|
+| v1 | Muda só o patch em relação à anterior **ou** algum commit com fix/hotfix/revert (sugestão do enunciado) | 0,471 | 0,960 | 0,632 |
+| v2 | Muda só o patch em relação à anterior **e** algum commit com fix/hotfix/revert | 0,681 | 0,611 | 0,644 |
+| v3 | A própria versão é um patch (X.Y.Z com Z > 0) | 0,578 | 0,936 | **0,715** |
+| v4 | A própria versão é um patch **e** algum commit com fix/hotfix/revert | 0,671 | 0,762 | 0,714 |
+
+Erros que motivaram cada refinamento:
+
+- **v1 → v2:** dos 136 falsos positivos da v1, 84 eram releases minor ou major com algum
+  commit de correção. Releases com recursos novos quase sempre trazem também alguns `fix`,
+  então o commit sozinho não indica release corretiva. A v2 passou a exigir os dois sinais.
+- **v2 → v3:** a precisão subiu, mas o recall caiu para 0,61 (49 falsos negativos). 24 deles
+  eram releases patch pela própria versão (ex.: `v3.0.15`), cuja "anterior" na ordem de
+  publicação é de outra linha de versão (backport, ex.: `v4.1.1`) ou de outro pacote do
+  monorepo. Outros 17 eram patches sem nenhum commit com fix/hotfix/revert no título: a
+  correção é descrita com outras palavras (ex.: "Properly reset the breakpoint skip…",
+  "Add workaround for Apple GPU hardware bug", "Don't evaluate if() values…") ou o compare
+  só tem commits de versão (ex.: "Changes for 8.6.1"). A v3 olha só o número da própria tag.
+- **v3 → v4:** a v3 passou do limiar de 0,70. Restam 86 falsos positivos, quase todos versões
+  patch que trazem recursos novos (comum em projetos 0.x) ou só atualizam dependências, e 17
+  deles sem commits no compare. A v4 tentou recuperar a precisão exigindo também um commit de
+  correção, mas perdeu recall na mesma proporção (F1 0,714) e não foi adotada.
+
+O CFR (b) usa a **v3**, a de maior F1. Dos 8 falsos negativos que restam, 7 são releases minor
+cujo conteúdo é só de correções (ex.: `remeda v2.44.0`, `itch v26.18.0`) e 1 é uma beta
+(`ustcthesis v4.0.0-beta.10`): casos que nenhuma regra baseada na versão consegue separar.
+
+## Tipo de projeto (`dados/tipo_projeto.csv`)
+
+A RQ 06 usa o tipo de projeto como fator. A amostra-ouro tem esse rótulo só para 60
+repositórios, então a etapa `tipo_projeto` estende a classificação aos 300 com uma heurística
+validada contra o consenso:
+
+```bash
+python -m pipeline --config config.yaml --etapas tipo_projeto
+```
+
+1. **Perfil:** para cada repositório de `metricas.csv`, coleta a descrição e os tópicos
+   (`GET /repos/{repo}`) e os primeiros 4.000 caracteres do README
+   (`GET /repos/{repo}/readme`). O resultado vai para `dados/perfis_repositorios.csv`, que é
+   versionado: com ele, a etapa roda sem token. O token só é pedido para os repositórios que
+   faltam no arquivo; a coleta dos 300 fez 600 chamadas e levou cerca de 4 minutos.
+2. **Heurística** (`metricas/tipo_projeto.py`): cada tipo tem padrões de texto procurados na
+   descrição (peso 3), nos tópicos (peso 2) e no README (peso 1). Vence o tipo com mais
+   pontos. Em caso de empate, ou sem nenhum sinal, a ordem é aplicação, biblioteca, CLI e
+   outro, do tipo mais comum para o menos comum na amostra-ouro.
+3. **Validação** contra o `tipo_projeto` de `consenso_repositorios.csv`, com
+   `precision_recall_fscore_support` por tipo, mais as médias macro e ponderada e a acurácia.
+4. **Tipo final:** nos 60 repositórios da amostra-ouro vale o rótulo de consenso; nos demais,
+   o da heurística. A coluna `origem` diz qual dos dois foi usado.
+
+| Versão | Acurácia | Precisão (macro) | Recall (macro) | F1 (macro) |
+|---|---|---|---|---|
+| v1 | 0,733 | 0,783 | 0,617 | 0,662 |
+| v2 | 0,950 | 0,971 | 0,902 | 0,932 |
+
+F1 da v2 por tipo: biblioteca/framework 0,952 (21 repositórios), aplicação/serviço 0,964 (27),
+ferramenta CLI 0,923 (7) e outro 0,889 (5).
+
+**Erros da v1 que motivaram a v2** (16 dos 60):
+
+- 6 bibliotecas sem nenhuma palavra-chave caíam no tipo padrão, aplicação ("simple HTTP
+  client in Erlang", "The Scala HTTP client you always wanted!", "modeling tool for DynamoDB").
+  A v2 reconhece "HTTP/API client", "for/in <linguagem>", ORM e os badges e links de pacote
+  publicado no README (npm, PyPI, crates.io, Maven Central, NuGet, Hex, Packagist).
+- 2 bibliotecas viravam aplicação por palavras genéricas: "database" (EF Core) e "desktop"
+  (notificações de desktop em PHP). A v2 exige "desktop app".
+- 5 ferramentas CLI eram classificadas como biblioteca ou aplicação: "plugin" do Cargo e do
+  Composer contavam como biblioteca, e um profiler, um binário estático e uma ferramenta
+  instalada por Homebrew/Chocolatey não tinham sinal de CLI. A v2 tira "plugin" e reconhece
+  linters, formatadores, profilers, análise estática, "subcommand", instalação por
+  Homebrew/Chocolatey/Scoop/winget e "single/static binary".
+- 2 do tipo outro: uma GitHub Action identificada só pelo README e um plugin do Obsidian.
+- 1 servidor MCP virou CLI por causa do `npx` no README. A v2 reconhece "MCP server".
+
+Erros que restam na v2: uma GitHub Action com um sinal de aplicação e um de outro no README
+(o empate favorece aplicação), o Microsoft Quantum
+Development Kit (sem sinal de biblioteca) e o dart-sass, que é ao mesmo tempo biblioteca e
+CLI e cuja descrição diz "implementation of".
+
+**Limitação:** as regras da v2 foram escritas a partir dos erros da v1 nos mesmos 60
+repositórios em que são avaliadas, então o F1 de 0,932 é otimista. Numa checagem informal de
+30 repositórios sorteados fora da amostra-ouro, apareceram erros claros que a validação não
+captura: `django-debug-toolbar` e `react-native-firebase` saem como aplicação, mas são
+bibliotecas. Também há casos ambíguos, como motores de jogo e módulos PowerShell. Para uma
+estimativa sem esse viés, o grupo pode rotular uma amostra nova, fora dos 60, e compará-la
+com `tipo_heuristica`.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
@@ -412,7 +518,9 @@ tipo, unidade e fórmula ou origem na API, estão em
 pipeline/   ponto de entrada (python -m pipeline) e leitura do config/token
 coleta/     acesso à API do GitHub, cache, rate limit e funil de seleção
 metricas/   funções puras de cálculo das métricas DORA
-validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância e consenso
+validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância, consenso e
+            validação das heurísticas (release corretiva e tipo de projeto)
+tipo_projeto/ etapa que classifica o tipo de projeto dos 300 repositórios
 analise/    análise estatística das RQs
 tests/      testes com pytest
 ```
