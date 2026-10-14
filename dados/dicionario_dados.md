@@ -39,6 +39,10 @@ como deploy, lead time (a) e CFR (a). O CFR (b) vem em colunas à parte e não e
 | `runs_falha` | inteiro | runs | Runs com `conclusion` em `failure`, `timed_out` ou `startup_failure`. |
 | `runs_sucesso` | inteiro | runs | Runs com `conclusion = success`. |
 | `runs_ignorados` | inteiro | runs | Demais runs (`cancelled`, `skipped`, `neutral`, `action_required`, `stale`, vazio); não entram em nenhum cálculo. |
+| `cfr_ci_sem_flaky` | real | proporção (0–1) | `cfr_ci` recalculado sem os `falhas_flaky_mesmo_commit`: (`runs_falha` − `falhas_flaky_mesmo_commit`) ÷ (`runs_falha` − `falhas_flaky_mesmo_commit` + `runs_sucesso`). Vazio se não há runs válidos. |
+| `falhas_flaky_mesmo_commit` | inteiro | runs | Runs com falha seguidos, no mesmo `workflow_id` e `head_sha`, por um run com `conclusion = success` (`run_started_at` posterior). |
+| `runs_reexecutados` | inteiro | runs | Runs com `run_attempt` > 1 (coluna `tentativa` de `runs.csv`). |
+| `runs_flaky_reexecucao` | inteiro | runs | Runs com `run_attempt` > 1 e `conclusion = success`: falharam e passaram ao ser reexecutados no mesmo commit. A tentativa com falha não é listada pela API, então eles já contam como sucesso em `cfr_ci`. |
 | `cfr_entrega` | real | proporção (0–1) | RQ 03 (b): `releases_falharam` ÷ `releases_avaliadas_cfr`. Vazio se nenhuma release pôde ser avaliada. |
 | `releases_falharam` | inteiro | releases | Releases seguidas, em até 7 dias (`metricas.janela_release_corretiva_dias`), por alguma release corretiva. |
 | `releases_avaliadas_cfr` | inteiro | releases | Releases da janela publicadas antes dos últimos 7 dias (denominador do CFR (b)). |

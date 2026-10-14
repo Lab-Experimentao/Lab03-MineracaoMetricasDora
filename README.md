@@ -323,6 +323,10 @@ As funções de cálculo ficam em `metricas/` e têm testes com os exemplos do e
 | `commits_data_futura` | commits | Commits com data de autor posterior à release, ignorados (rebase, cherry-pick). |
 | `cfr_ci` | proporção (0–1) | (a) Runs com falha ÷ (falhas + sucessos); `cancelled`, `skipped` etc. não entram. |
 | `runs_falha`, `runs_sucesso`, `runs_ignorados` | runs | Contagens usadas no CFR. |
+| `cfr_ci_sem_flaky` | proporção (0–1) | `cfr_ci` sem as falhas seguidas de sucesso no mesmo workflow e commit (`falhas_flaky_mesmo_commit`), para comparar com o original. |
+| `falhas_flaky_mesmo_commit` | runs | Runs com falha que têm um run com sucesso depois, no mesmo workflow e `head_sha`. |
+| `runs_reexecutados` | runs | Runs com `run_attempt` > 1. |
+| `runs_flaky_reexecucao` | runs | Runs reexecutados que terminaram em sucesso. |
 | `cfr_entrega` | proporção (0–1) | (b) Releases seguidas por uma release corretiva em até 7 dias ÷ releases avaliadas. Não entra na classificação C1. |
 | `releases_falharam`, `releases_avaliadas_cfr`, `releases_censuradas_cfr` | releases | Contagens do CFR (b). As releases dos últimos 7 dias da janela são censuradas: ficam fora do denominador. |
 | `releases_corretivas` | releases | Releases marcadas como corretivas pela heurística (base da rework rate, RQ 08). |
@@ -339,6 +343,13 @@ Decisões adotadas onde o enunciado não define:
 - Um repositório sem nenhuma falha de CI não tem tempo de recuperação; nesse caso a
   classe geral é a mediana das métricas disponíveis (três em vez de quatro).
 - Runs sem `run_started_at` usam o `created_at` como início.
+- Falha intermitente (flaky) é a que passou no mesmo commit sem mudança de código. Um run
+  reexecutado que passou (`run_attempt` > 1) é o caso mais comum, mas a listagem de runs
+  da API traz só a última tentativa: a falha anterior não está nos dados, e o run já entra
+  no `cfr_ci` como sucesso. Por isso ele só é contado (`runs_flaky_reexecucao`), e o
+  `cfr_ci_sem_flaky` tira apenas as falhas que estão nos dados (`falhas_flaky_mesmo_commit`).
+  Para ver as falhas escondidas pelas reexecuções seria preciso buscar cada tentativa
+  anterior em `GET /repos/{repo}/actions/runs/{id}/attempts/{n}`.
 
 O log da etapa mostra quantas releases foram ignoradas por erro no compare e a
 distribuição da classificação geral. Para recalcular só as métricas, sem acessar a API:

@@ -14,6 +14,7 @@ from typing import Any
 
 from metricas.cfr import cfr_ci
 from metricas.corretiva import ReleaseAvaliada, cfr_entrega
+from metricas.flaky import RunCI, separar_flaky
 from metricas.classificacao import (
     classificar_cfr,
     classificar_frequencia,
@@ -96,6 +97,20 @@ def runs(linhas: Iterable[Linha]) -> dict[str, list[Run]]:
     return resultado
 
 
+def runs_ci(linhas: Iterable[Linha]) -> dict[str, list[RunCI]]:
+    resultado: dict[str, list[RunCI]] = defaultdict(list)
+    for linha in linhas:
+        resultado[linha["repositorio"]].append(RunCI(
+            id=int(linha["id"]),
+            workflow_id=int(linha["workflow_id"]),
+            head_sha=linha.get("head_sha", ""),
+            tentativa=int(linha.get("tentativa") or 1),
+            conclusao=linha["conclusao"] or None,
+            iniciado_em=_data(linha["iniciado_em"]) or _data(linha["criado_em"]),
+        ))
+    return resultado
+
+
 def calcular_repositorio(
     releases: list[ReleaseCommits],
     runs_repo: list[Run],
@@ -106,12 +121,14 @@ def calcular_repositorio(
     avaliadas: list[ReleaseAvaliada],
     fim_janela: datetime,
     dias_corretiva: int,
+    runs_ci_repo: Iterable[RunCI] = (),
 ) -> dict[str, Any]:
     """Métricas de um repositório e a classificação DORA de referência (C1)."""
     frequencia = len(releases) / semanas_janela
     lead = calcular_lead_time(releases)
     cfr = cfr_ci((r.conclusao for r in runs_repo), sucesso, falha)
     entrega = cfr_entrega(avaliadas, fim_janela, dias_corretiva)
+    flaky = separar_flaky(runs_ci_repo, sucesso, falha)
     recuperacao = tempo_recuperacao(runs_repo, sucesso, falha)
 
     def classe(valor, funcao):
@@ -132,6 +149,10 @@ def calcular_repositorio(
         "runs_falha": cfr.falhas,
         "runs_sucesso": cfr.sucessos,
         "runs_ignorados": cfr.ignorados,
+        "cfr_ci_sem_flaky": flaky.cfr_sem_flaky.taxa,
+        "falhas_flaky_mesmo_commit": flaky.falhas_mesmo_commit,
+        "runs_reexecutados": flaky.reexecutados,
+        "runs_flaky_reexecucao": flaky.reexecutados_com_sucesso,
         "cfr_entrega": entrega.taxa,
         "releases_falharam": entrega.falhas,
         "releases_avaliadas_cfr": entrega.avaliadas,
@@ -168,7 +189,9 @@ def calcular_todos(
     compares, commits = list(compares), list(commits)
     releases_por_repo = releases_commits(compares, commits)
     avaliadas_por_repo = releases_avaliadas(compares, commits)
+    linhas_runs = list(linhas_runs)
     runs_por_repo = runs(linhas_runs)
+    runs_ci_por_repo = runs_ci(linhas_runs)
     return [
         {
             **repo,
@@ -178,6 +201,7 @@ def calcular_todos(
                 semanas_janela, sucesso, falha,
                 avaliadas=avaliadas_por_repo.get(repo["repositorio"], []),
                 fim_janela=fim_janela, dias_corretiva=dias_corretiva,
+                runs_ci_repo=runs_ci_por_repo.get(repo["repositorio"], []),
             ),
         }
         for repo in repositorios
