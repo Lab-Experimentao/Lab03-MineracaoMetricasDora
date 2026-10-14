@@ -282,6 +282,57 @@ Cada erro de cada versão, para analisar o que motivou o refinamento.
 | `commits_correcao` | inteiro | commits | Commits cujo título tem fix, fixes, fixed, hotfix, bugfix ou revert. |
 | `titulos_correcao` | texto | — | Até 5 desses títulos, separados por ` \| `. |
 
+### `tipo_projeto_validacao.csv`
+
+Desempenho de cada versão da heurística de tipo de projeto frente ao `tipo_projeto` de
+`consenso_repositorios.csv` (60 repositórios), com `precision_recall_fscore_support`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `versao` | texto | — | Versão dos padrões (`metricas/tipo_projeto.py`, `VERSOES`). |
+| `classe` | texto | — | Um dos quatro tipos, `macro` (média simples entre os tipos), `ponderada` (média pelo suporte) ou `acuracia`. |
+| `suporte` | inteiro | repositórios | Repositórios desse tipo no consenso (nas médias, o total). |
+| `previstos` | inteiro | repositórios | Repositórios que a heurística classificou nesse tipo. |
+| `precisao`, `recall`, `f1` | real | proporção (0–1) | Por tipo, VP ÷ (VP + FP), VP ÷ (VP + FN) e 2·P·R ÷ (P + R). Na linha `acuracia`, as três colunas trazem a proporção de acertos. |
+
+### `tipo_projeto_erros.csv`
+
+Repositórios da amostra-ouro em que cada versão errou.
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `versao` | texto | `v1`… | Versão da heurística. |
+| `repositorio` | texto | — | `owner/repo`. |
+| `consenso`, `heuristica` | texto | os quatro tipos | Tipo de consenso e tipo da heurística. |
+| `descricao` | texto | — | Até 200 caracteres da descrição do repositório. |
+| `topicos` | texto | — | Tópicos separados por `;`. |
+| `pontos` | texto | — | Pontos de cada tipo com pelo menos um sinal (ex.: `biblioteca/framework=4, ferramenta CLI=1`). |
+
+## Tipo de projeto
+
+### `dados/perfis_repositorios.csv`
+
+Perfil de cada repositório da amostra, coletado pela etapa `tipo_projeto` e versionado.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorio` | texto | — | `owner/repo`. |
+| `descricao` | texto | — | `description` de `GET /repos/{repo}`; vazio se não houver. |
+| `topicos` | texto | — | `topics` de `GET /repos/{repo}`, separados por `;`. |
+| `readme` | texto | caracteres | Primeiros 4.000 caracteres do README (`GET /repos/{repo}/readme`, decodificado de base64); vazio se não houver README. |
+
+### `dados/tipo_projeto.csv`
+
+Tipo de projeto dos 300 repositórios, para a RQ 06.
+
+| Coluna | Tipo | Valores | Fórmula / origem |
+|---|---|---|---|
+| `repositorio` | texto | — | `owner/repo`. |
+| `tipo_heuristica` | texto | os quatro tipos | Tipo dado pela versão atual da heurística (v2) para todos os repositórios. |
+| `tipo_consenso` | texto | os quatro tipos, ou vazio | Rótulo de consenso, só nos 60 da amostra-ouro. |
+| `tipo_projeto` | texto | os quatro tipos | Tipo usado na análise: `tipo_consenso` quando existe; senão, `tipo_heuristica`. |
+| `origem` | texto | `consenso`, `heuristica` | De onde veio `tipo_projeto`. |
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

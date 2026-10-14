@@ -1,0 +1,20 @@
+versao,repositorio,consenso,heuristica,descricao,topicos,pontos
+v1,EmbarkStudios/cargo-deny,ferramenta CLI,biblioteca/framework,❌ Cargo plugin for linting your dependencies 🦀,advisories;bans;cargo;cargo-subcommand;crates;licenses;rust,"biblioteca/framework=3, ferramenta CLI=1"
+v1,YishenTu/claudian,outro,biblioteca/framework,An Obsidian plugin that embeds Claude Code/Codex as an AI collaborator in your vault,claude-code;codex;grok;ide;obsidian;obsidian-plugin;opencode;pi;productivity,biblioteca/framework=3
+v1,aeron-io/aeron,biblioteca/framework,aplicação/serviço,"Efficient reliable UDP unicast, UDP multicast, and IPC message transport",c;c-plus-plus;ipc;java;messaging;multicast-streams,
+v1,aws-actions/amazon-ecr-login,outro,aplicação/serviço,Logs into Amazon ECR with the local Docker client.,,"aplicação/serviço=1, outro=1"
+v1,benoitc/hackney,biblioteca/framework,aplicação/serviço,simple HTTP client in Erlang,client;erlang;http,
+v1,dotnet/efcore,biblioteca/framework,aplicação/serviço,"EF Core is a modern object-database mapper for .NET. It supports LINQ queries, change tracking, updates, and schema migrations.",aspnet-product;c-sharp;database;dotnet-core;dotnet-framework;dotnet-standard;entity-framework;hacktoberfest;orm,"biblioteca/framework=1, aplicação/serviço=3"
+v1,dynamoose/dynamoose,biblioteca/framework,aplicação/serviço,Dynamoose is a modeling tool for Amazon's DynamoDB,amazon-dynamodb;dynamodb;dynamoose;javascript;nodejs,
+v1,ergebnis/composer-normalize,ferramenta CLI,biblioteca/framework,🎵 Provides a composer plugin for normalizing composer.json.,composer;composer-plugin;json;normalizer,biblioteca/framework=4
+v1,jolicode/JoliNotif,biblioteca/framework,aplicação/serviço,🖥️ Send notifications to your desktop directly from your PHP script,desktop-notifications;hack;hacktoberfest;notifier;notify;php,"biblioteca/framework=1, aplicação/serviço=3"
+v1,microsoft/qdk,biblioteca/framework,aplicação/serviço,"Microsoft Quantum Development Kit, including the Q# programming language, resource estimator, and Quantum Katas",compilers;qsharp;quantum;quantum-computing;quantum-programming;quantum-programming-language;quantum-resource-estimation;tutorials;vscode,
+v1,pgrundev/pgbot,ferramenta CLI,aplicação/serviço,Postgres intelligence for ai agents,ai;data-analysis;database;postgres;postgresql;postgresql-database,
+v1,plasma-umass/scalene,ferramenta CLI,aplicação/serviço,"Scalene: a high-performance, high-precision CPU, GPU, and memory profiler for Python with AI-powered optimization proposals",cpu;cpu-profiling;gpu;gpu-programming;memory-allocation;memory-consumption;performance-analysis;performance-cpu;profiler;profiles-memory;profiling;python;python-profilers;scalene,
+v1,react-cosmos/react-cosmos,biblioteca/framework,aplicação/serviço,Sandbox for developing and testing UI components in isolation,components;devtools;react;sandbox;testing;ui,
+v1,sass/dart-sass,ferramenta CLI,biblioteca/framework,"The reference implementation of Sass, written in Dart.",css-preprocessor;dart;dart-sass;sass,"biblioteca/framework=3, ferramenta CLI=1"
+v1,softwaremill/sttp,biblioteca/framework,aplicação/serviço,The Scala HTTP client you always wanted!,akka-http;asynchronous;cats;client;distributed-tracing;http;http-client;httpclient;interpolator;monix;okhttp;reactive-streams;scala;scalaz;synchronous;uri;zipkin;zipkin-brave,
+v1,zereight/gitlab-mcp,aplicação/serviço,ferramenta CLI,"First gitlab mcp for you, building together",,ferramenta CLI=1
+v2,aws-actions/amazon-ecr-login,outro,aplicação/serviço,Logs into Amazon ECR with the local Docker client.,,"aplicação/serviço=1, outro=1"
+v2,microsoft/qdk,biblioteca/framework,aplicação/serviço,"Microsoft Quantum Development Kit, including the Q# programming language, resource estimator, and Quantum Katas",compilers;qsharp;quantum;quantum-computing;quantum-programming;quantum-programming-language;quantum-resource-estimation;tutorials;vscode,
+v2,sass/dart-sass,ferramenta CLI,biblioteca/framework,"The reference implementation of Sass, written in Dart.",css-preprocessor;dart;dart-sass;sass,"biblioteca/framework=7, ferramenta CLI=1"

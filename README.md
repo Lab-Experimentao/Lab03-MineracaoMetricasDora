@@ -42,13 +42,15 @@ Opções:
 | Opção | Descrição |
 |---|---|
 | `--config CAMINHO` | Arquivo de configuração (obrigatório). |
-| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas`, `validacao` e `analise` (padrão: todas). Só a `coleta` exige o token. |
+| `--etapas ...` | Executa só algumas etapas, entre `coleta`, `metricas`, `validacao`, `tipo_projeto` e `analise` (padrão: todas). A `coleta` exige o token; a `tipo_projeto`, só se faltar coletar algum perfil. |
 | `-v`, `--verbose` | Log detalhado. |
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
 `dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
-preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A etapa de análise ainda não está implementada (Sprint 03).
+preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
+classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
+outro (`dados/tipo_projeto.csv`). A etapa de análise ainda não está implementada (Sprint 03).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -443,6 +445,67 @@ O CFR (b) usa a **v3**, a de maior F1. Dos 8 falsos negativos que restam, 7 são
 cujo conteúdo é só de correções (ex.: `remeda v2.44.0`, `itch v26.18.0`) e 1 é uma beta
 (`ustcthesis v4.0.0-beta.10`): casos que nenhuma regra baseada na versão consegue separar.
 
+## Tipo de projeto (`dados/tipo_projeto.csv`)
+
+A RQ 06 usa o tipo de projeto como fator. A amostra-ouro tem esse rótulo só para 60
+repositórios, então a etapa `tipo_projeto` estende a classificação aos 300 com uma heurística
+validada contra o consenso:
+
+```bash
+python -m pipeline --config config.yaml --etapas tipo_projeto
+```
+
+1. **Perfil:** para cada repositório de `metricas.csv`, coleta a descrição e os tópicos
+   (`GET /repos/{repo}`) e os primeiros 4.000 caracteres do README
+   (`GET /repos/{repo}/readme`). O resultado vai para `dados/perfis_repositorios.csv`, que é
+   versionado: com ele, a etapa roda sem token. O token só é pedido para os repositórios que
+   faltam no arquivo; a coleta dos 300 fez 600 chamadas e levou cerca de 4 minutos.
+2. **Heurística** (`metricas/tipo_projeto.py`): cada tipo tem padrões de texto procurados na
+   descrição (peso 3), nos tópicos (peso 2) e no README (peso 1). Vence o tipo com mais
+   pontos. Em caso de empate, ou sem nenhum sinal, a ordem é aplicação, biblioteca, CLI e
+   outro, do tipo mais comum para o menos comum na amostra-ouro.
+3. **Validação** contra o `tipo_projeto` de `consenso_repositorios.csv`, com
+   `precision_recall_fscore_support` por tipo, mais as médias macro e ponderada e a acurácia.
+4. **Tipo final:** nos 60 repositórios da amostra-ouro vale o rótulo de consenso; nos demais,
+   o da heurística. A coluna `origem` diz qual dos dois foi usado.
+
+| Versão | Acurácia | Precisão (macro) | Recall (macro) | F1 (macro) |
+|---|---|---|---|---|
+| v1 | 0,733 | 0,783 | 0,617 | 0,662 |
+| v2 | 0,950 | 0,971 | 0,902 | 0,932 |
+
+F1 da v2 por tipo: biblioteca/framework 0,952 (21 repositórios), aplicação/serviço 0,964 (27),
+ferramenta CLI 0,923 (7) e outro 0,889 (5).
+
+**Erros da v1 que motivaram a v2** (16 dos 60):
+
+- 6 bibliotecas sem nenhuma palavra-chave caíam no tipo padrão, aplicação ("simple HTTP
+  client in Erlang", "The Scala HTTP client you always wanted!", "modeling tool for DynamoDB").
+  A v2 reconhece "HTTP/API client", "for/in <linguagem>", ORM e os badges e links de pacote
+  publicado no README (npm, PyPI, crates.io, Maven Central, NuGet, Hex, Packagist).
+- 2 bibliotecas viravam aplicação por palavras genéricas: "database" (EF Core) e "desktop"
+  (notificações de desktop em PHP). A v2 exige "desktop app".
+- 5 ferramentas CLI eram classificadas como biblioteca ou aplicação: "plugin" do Cargo e do
+  Composer contavam como biblioteca, e um profiler, um binário estático e uma ferramenta
+  instalada por Homebrew/Chocolatey não tinham sinal de CLI. A v2 tira "plugin" e reconhece
+  linters, formatadores, profilers, análise estática, "subcommand", instalação por
+  Homebrew/Chocolatey/Scoop/winget e "single/static binary".
+- 2 do tipo outro: uma GitHub Action identificada só pelo README e um plugin do Obsidian.
+- 1 servidor MCP virou CLI por causa do `npx` no README. A v2 reconhece "MCP server".
+
+Erros que restam na v2: uma GitHub Action com um sinal de aplicação e um de outro no README
+(o empate favorece aplicação), o Microsoft Quantum
+Development Kit (sem sinal de biblioteca) e o dart-sass, que é ao mesmo tempo biblioteca e
+CLI e cuja descrição diz "implementation of".
+
+**Limitação:** as regras da v2 foram escritas a partir dos erros da v1 nos mesmos 60
+repositórios em que são avaliadas, então o F1 de 0,932 é otimista. Numa checagem informal de
+30 repositórios sorteados fora da amostra-ouro, apareceram erros claros que a validação não
+captura: `django-debug-toolbar` e `react-native-firebase` saem como aplicação, mas são
+bibliotecas. Também há casos ambíguos, como motores de jogo e módulos PowerShell. Para uma
+estimativa sem esse viés, o grupo pode rotular uma amostra nova, fora dos 60, e compará-la
+com `tipo_heuristica`.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
@@ -455,7 +518,9 @@ tipo, unidade e fórmula ou origem na API, estão em
 pipeline/   ponto de entrada (python -m pipeline) e leitura do config/token
 coleta/     acesso à API do GitHub, cache, rate limit e funil de seleção
 metricas/   funções puras de cálculo das métricas DORA
-validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância e consenso
+validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância, consenso e
+            validação das heurísticas (release corretiva e tipo de projeto)
+tipo_projeto/ etapa que classifica o tipo de projeto dos 300 repositórios
 analise/    análise estatística das RQs
 tests/      testes com pytest
 ```

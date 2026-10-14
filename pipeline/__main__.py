@@ -10,7 +10,7 @@ from pathlib import Path
 
 from pipeline.config import ErroConfig, carregar_config, obter_token
 
-ETAPAS = ("coleta", "metricas", "validacao", "analise")
+ETAPAS = ("coleta", "metricas", "validacao", "tipo_projeto", "analise")
 
 log = logging.getLogger("pipeline")
 
@@ -76,6 +76,14 @@ def main(argv: Sequence[str] | None = None) -> int:
             try:
                 executar_validacao(config)
             except (FileNotFoundError, ErroRotulos) as erro:
+                log.error("%s", erro)
+                return 2
+        elif etapa == "tipo_projeto":
+            from tipo_projeto.etapa import executar as executar_tipo_projeto
+            try:
+                # O token só é lido se faltar coletar o perfil de algum repositório.
+                executar_tipo_projeto(config, lambda: token or obter_token(arquivo_env))
+            except (FileNotFoundError, ErroConfig) as erro:
                 log.error("%s", erro)
                 return 2
         elif etapa == "analise":
