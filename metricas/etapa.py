@@ -47,5 +47,8 @@ def executar(config: Config) -> None:
     log.info("gravado %s (%d repositórios)", destino, len(linhas))
     log.info("releases ignoradas no lead time por erro no compare (ex.: 404): %d",
              sum(l["releases_compare_erro"] for l in linhas))
+    log.info("flaky: %d falhas seguidas de sucesso no mesmo commit; %d runs reexecutados, %d deles com sucesso",
+             sum(l["falhas_flaky_mesmo_commit"] for l in linhas), sum(l["runs_reexecutados"] for l in linhas),
+             sum(l["runs_flaky_reexecucao"] for l in linhas))
     log.info("classificação geral (C1): %s",
              dict(Counter(l["classe_geral"] or "sem dados" for l in linhas).most_common()))
