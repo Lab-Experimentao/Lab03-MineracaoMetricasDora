@@ -203,6 +203,51 @@ Aba `releases` (uma linha por release de `amostra_ouro.csv`):
 | `titulos_commits` | texto | — | Títulos dos commits do compare com a release anterior (`commits.csv`, até 20, com aviso quando há mais); ou o motivo de não haver lista (primeira release, compare com erro). |
 | `observacoes` | texto | livre | Dúvidas e justificativas. |
 
+### `desempates.csv`
+
+Decisões de reunião do grupo, preenchidas à mão: casos sem maioria (1-1-1) e casos de maioria
+que o grupo decidiu rediscutir. Prevalecem sobre a votação no consenso.
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `dimensao` | texto | `tipo_projeto`, `entregas_reais`, `corretiva` | Dimensão decidida. |
+| `repositorio` | texto | — | Repositório da amostra-ouro. |
+| `tag` | texto | — | Tag da release, só para `corretiva`; vazio nas outras dimensões. |
+| `rotulo` | texto | os valores da dimensão nas planilhas | Rótulo decidido em reunião. |
+| `justificativa` | texto | livre | Por que o grupo decidiu assim. |
+
+### `concordancia.csv`
+
+Concordância entre os avaliadores, uma linha por dimensão, calculada sobre a rotulagem
+independente (antes das reuniões).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `dimensao` | texto | — | `tipo_projeto`, `entregas_reais` ou `corretiva`. |
+| `itens` | inteiro | itens | Repositórios (60) ou releases (300) rotulados. |
+| `avaliadores` | inteiro | pessoas | `validacao_manual.avaliadores` do `config.yaml`. |
+| `kappa` | real | — | Kappa de Fleiss: `fleiss_kappa(aggregate_raters(rotulos)[0])` do statsmodels. NaN se todos usaram uma única categoria. |
+| `interpretacao` | texto | — | Faixa de Landis & Koch (1977): pobre (< 0), leve (até 0,20), razoável (até 0,40), moderada (até 0,60), substancial (até 0,80), quase perfeita. |
+| `concordancia_observada` | real | proporção | Média, entre os itens, da proporção de pares de avaliadores que deram o mesmo rótulo (o P̄ de Fleiss, sem desconto do acaso). |
+| `unanimes` | inteiro | itens | Todos os avaliadores deram o mesmo rótulo. |
+| `maioria` | inteiro | itens | Sem unanimidade, mas um rótulo com mais da metade dos votos. |
+| `sem_maioria` | inteiro | itens | Nenhum rótulo com mais da metade dos votos (1-1-1). |
+| `decididos_em_reuniao` | inteiro | itens | Itens com decisão em `desempates.csv`. |
+| `pendentes` | inteiro | itens | Sem maioria e sem decisão de reunião: sem consenso ainda. |
+
+### `consenso_repositorios.csv` e `consenso_releases.csv`
+
+Rótulos de consenso, a referência para validar a classificação automática do tipo de projeto
+e a heurística de release corretiva. Uma linha por repositório (60) ou por release (300), na
+ordem das planilhas.
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `repositorio`; nas releases também `tag`, `tag_anterior`, `publicada_em` | — | — | Iguais às planilhas de rotulagem. |
+| `tipo_projeto`, `entregas_reais` (repositórios); `corretiva` (releases) | texto | os valores das planilhas, ou vazio | Rótulo de consenso; vazio quando pendente. |
+| `<dimensao>_regra` | texto | `unanime`, `maioria`, `reuniao`, `pendente` | Regra do protocolo de desempate que definiu o consenso. |
+| `<dimensao>_<avaliador>` | texto | os valores das planilhas | Rótulo dado por cada avaliador. |
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

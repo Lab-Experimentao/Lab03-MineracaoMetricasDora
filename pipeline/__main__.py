@@ -71,10 +71,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 log.error("%s", erro)
                 return 2
         elif etapa == "validacao":
+            from validacao.concordancia import ErroRotulos
             from validacao.etapa import executar as executar_validacao
             try:
                 executar_validacao(config)
-            except FileNotFoundError as erro:
+            except (FileNotFoundError, ErroRotulos) as erro:
                 log.error("%s", erro)
                 return 2
         elif etapa == "analise":
