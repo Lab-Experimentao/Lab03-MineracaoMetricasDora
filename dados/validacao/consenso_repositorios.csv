@@ -1,0 +1,61 @@
+repositorio,tipo_projeto,tipo_projeto_regra,tipo_projeto_felipe,tipo_projeto_gabriel,tipo_projeto_arthur,entregas_reais,entregas_reais_regra,entregas_reais_felipe,entregas_reais_gabriel,entregas_reais_arthur
+AsyncHttpClient/async-http-client,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+Bitterbot-AI/bitterbot-desktop,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+Brooooooklyn/canvas,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+EmbarkStudios/cargo-deny,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+IfcOpenShell/IfcOpenShell,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,não,maioria,sim,não,não
+ItzCrazyKns/Vane,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+Legcord/Legcord,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+OpenBMB/StaffDeck,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,maioria,incerto,sim,sim
+PCSX2/pcsx2,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+RongleCat/grok-app,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+VoltAgent/voltagent,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+YishenTu/claudian,outro,maioria,outro,aplicação/serviço,outro,sim,unanime,sim,sim,sim
+aeron-io/aeron,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+apache/pulsar,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+assistant-ui/assistant-ui,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+aws-actions/amazon-ecr-login,outro,unanime,outro,outro,outro,sim,unanime,sim,sim,sim
+ayangweb/BongoCat,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+benoitc/hackney,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+cinnyapp/cinny,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+cloud-in-a-bottle/cloud-in-a-bottle,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+cloudflare/mcp-server-cloudflare,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,incerto,maioria,sim,incerto,incerto
+community-shaders/skyrim-community-shaders,outro,unanime,outro,outro,outro,sim,unanime,sim,sim,sim
+directus/directus,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+dotnet/efcore,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+dotnetcore/BootstrapBlazor,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+dynamoose/dynamoose,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+ergebnis/composer-normalize,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+hexclave/hexclave,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,,pendente,sim,não,incerto
+infinispan/infinispan,aplicação/serviço,maioria,aplicação/serviço,aplicação/serviço,biblioteca/framework,sim,unanime,sim,sim,sim
+itchio/itch,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+jolicode/JoliNotif,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+krille-chan/fluffychat,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+kubeai-project/kubeai,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+ludo-technologies/pyscn,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+meta-pytorch/botorch,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+microsoft/qdk,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+mullvad/mullvadvpn-app,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+nilsteampassnet/TeamPass,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+ohler55/oj,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+openmm/openmm,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+pH7Software/pH7-Social-Dating-CMS,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+pgrundev/pgbot,ferramenta CLI,maioria,aplicação/serviço,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+plasma-umass/scalene,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+qiutongxue/oba-live-tool,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+rachelos/we-mp-rss,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+raphaelmansuy/edgequake,aplicação/serviço,maioria,biblioteca/framework,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+react-cosmos/react-cosmos,biblioteca/framework,maioria,ferramenta CLI,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+remeda/remeda,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+run-llama/liteparse,biblioteca/framework,maioria,biblioteca/framework,ferramenta CLI,biblioteca/framework,sim,unanime,sim,sim,sim
+runfinch/finch,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+sass/dart-sass,ferramenta CLI,unanime,ferramenta CLI,ferramenta CLI,ferramenta CLI,sim,unanime,sim,sim,sim
+softprops/action-gh-release,outro,unanime,outro,outro,outro,sim,unanime,sim,sim,sim
+softwaremill/sttp,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+tailwindlabs/prettier-plugin-tailwindcss,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+ustctug/ustcthesis,outro,unanime,outro,outro,outro,sim,unanime,sim,sim,sim
+vicanso/zedis,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+vue-stripe/vue-stripe,biblioteca/framework,unanime,biblioteca/framework,biblioteca/framework,biblioteca/framework,sim,unanime,sim,sim,sim
+wk42worldworld/cybercode,aplicação/serviço,maioria,outro,aplicação/serviço,aplicação/serviço,sim,maioria,incerto,sim,sim
+zereight/gitlab-mcp,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim
+zhblue/hustoj,aplicação/serviço,unanime,aplicação/serviço,aplicação/serviço,aplicação/serviço,sim,unanime,sim,sim,sim

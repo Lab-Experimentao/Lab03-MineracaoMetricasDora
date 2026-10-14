@@ -1,0 +1,4 @@
+dimensao,itens,avaliadores,kappa,interpretacao,concordancia_observada,unanimes,maioria,sem_maioria,decididos_em_reuniao,pendentes
+tipo_projeto,60,3,0.8818,quase perfeita,0.9222,53,7,0,0,0
+entregas_reais,60,3,0.2883,razoável,0.9389,55,4,1,0,1
+corretiva,300,3,0.693,substancial,0.8489,232,68,0,0,0

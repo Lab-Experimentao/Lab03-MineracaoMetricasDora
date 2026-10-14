@@ -47,8 +47,8 @@ Opções:
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
 `dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
-a de **validação** sorteia a amostra-ouro e gera as planilhas de rotulagem
-(`dados/validacao/`). A etapa de análise ainda não está implementada (Sprint 03).
+a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
+preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A etapa de análise ainda não está implementada (Sprint 03).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -367,6 +367,39 @@ A planilha não mostra nenhuma saída da heurística. Cada avaliador preenche a 
 sem consultar os demais, e a commita. Reexecutar a etapa não sobrescreve planilhas que já
 existem; para gerar uma de novo em branco, apague-a antes.
 
+### Concordância e consenso
+
+Quando as planilhas de todos os avaliadores estão completas (nenhum rótulo vazio ou fora
+da lista), a mesma etapa calcula o kappa de Fleiss em cada dimensão, com `aggregate_raters`
+e `fleiss_kappa` do statsmodels, e monta o rótulo de consenso. Enquanto alguma estiver
+incompleta, ela só avisa no log o que falta. O código fica em `validacao/concordancia.py`.
+Com as planilhas de todos os avaliadores já criadas, a etapa não refaz o sorteio e não lê
+`dados/brutos/`: para calcular a concordância bastam as planilhas.
+
+**Protocolo de desempate:**
+
+1. Os três concordam: é o consenso (`unanime`).
+2. Dois concordam e um diverge: vale a maioria simples (`maioria`).
+3. Os três divergem (1-1-1, possível em `tipo_projeto` e `entregas_reais`): o caso é decidido
+   em reunião do grupo e registrado em `desempates.csv` (`reuniao`). Até lá, fica `pendente`
+   e a etapa avisa no log.
+
+Se o grupo rediscutir em reunião um caso de maioria, a decisão também vai em
+`desempates.csv` e prevalece sobre a maioria. O kappa e as contagens de concordância são
+sempre os da rotulagem independente, antes de qualquer reunião.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `desempates.csv` | Preenchido pelo grupo: `dimensao` (`tipo_projeto`, `entregas_reais` ou `corretiva`), `repositorio`, `tag` (só para `corretiva`), `rotulo` decidido e `justificativa`. A etapa cria o arquivo em branco e recusa decisões com item ou rótulo inexistente. |
+| `concordancia.csv` | Uma linha por dimensão: itens, avaliadores, kappa de Fleiss, interpretação (Landis & Koch, 1977), concordância observada (proporção média de pares de avaliadores que concordam), e quantos itens foram unânimes, decididos por maioria, sem maioria, decididos em reunião e ainda pendentes. |
+| `consenso_repositorios.csv` | Os 60 repositórios: `tipo_projeto` e `entregas_reais` de consenso, a regra que definiu cada um (`*_regra`) e o rótulo de cada avaliador (`*_<avaliador>`). Referência para a classificação automática do tipo de projeto e para a RQ 06. |
+| `consenso_releases.csv` | As 300 releases: `corretiva` de consenso, a regra e o rótulo de cada avaliador. Referência para a precisão, o recall e o F1 da heurística de release corretiva. |
+
+Um kappa baixo com concordância observada alta indica que quase todos os itens caíram na
+mesma categoria: o kappa desconta a concordância esperada por acaso, que nesse caso já é
+alta. É o que acontece em `entregas_reais`, em que a resposta é `sim` para quase todos os
+repositórios.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
@@ -379,7 +412,7 @@ tipo, unidade e fórmula ou origem na API, estão em
 pipeline/   ponto de entrada (python -m pipeline) e leitura do config/token
 coleta/     acesso à API do GitHub, cache, rate limit e funil de seleção
 metricas/   funções puras de cálculo das métricas DORA
-validacao/  sorteio da amostra-ouro e planilhas de rotulagem
+validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância e consenso
 analise/    análise estatística das RQs
 tests/      testes com pytest
 ```
