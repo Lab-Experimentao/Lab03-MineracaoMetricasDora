@@ -321,6 +321,9 @@ As funções de cálculo ficam em `metricas/` e têm testes com os exemplos do e
 | `commits_data_futura` | commits | Commits com data de autor posterior à release, ignorados (rebase, cherry-pick). |
 | `cfr_ci` | proporção (0–1) | (a) Runs com falha ÷ (falhas + sucessos); `cancelled`, `skipped` etc. não entram. |
 | `runs_falha`, `runs_sucesso`, `runs_ignorados` | runs | Contagens usadas no CFR. |
+| `cfr_entrega` | proporção (0–1) | (b) Releases seguidas por uma release corretiva em até 7 dias ÷ releases avaliadas. Não entra na classificação C1. |
+| `releases_falharam`, `releases_avaliadas_cfr`, `releases_censuradas_cfr` | releases | Contagens do CFR (b). As releases dos últimos 7 dias da janela são censuradas: ficam fora do denominador. |
+| `releases_corretivas` | releases | Releases marcadas como corretivas pela heurística (base da rework rate, RQ 08). |
 | `recuperacao_horas` | horas | Mediana dos episódios de falha de todos os workflows: da primeira falha após um sucesso (`run_started_at`) ao próximo sucesso do mesmo workflow (`updated_at`). |
 | `episodios_recuperados`, `episodios_censurados` | episódios | Episódios encerrados e não encerrados até o fim da janela. |
 | `proporcao_censurados` | proporção (0–1) | Censurados ÷ total de episódios. |
@@ -399,6 +402,46 @@ Um kappa baixo com concordância observada alta indica que quase todos os itens 
 mesma categoria: o kappa desconta a concordância esperada por acaso, que nesse caso já é
 alta. É o que acontece em `entregas_reais`, em que a resposta é `sim` para quase todos os
 repositórios.
+
+### Heurística de release corretiva (CFR b)
+
+O CFR (b) considera que uma release falhou quando ela é seguida, em até 7 dias
+(`metricas.janela_release_corretiva_dias`), por uma release corretiva. Basta qualquer release
+corretiva nesse prazo, não só a imediatamente seguinte. As releases publicadas nos últimos 7
+dias da janela ficam fora do denominador (censura). O código está em `metricas/corretiva.py`.
+
+A heurística que decide se uma release é corretiva foi validada contra o consenso das 300
+releases da amostra-ouro (126 corretivas), com `precision_recall_fscore_support` do
+scikit-learn. A mesma etapa de validação recalcula tudo e grava `heuristica_versoes.csv` e
+`heuristica_erros.csv` (precisa de `dados/brutos/commits.csv`). Cada versão testada:
+
+| Versão | Regra | Precisão | Recall | F1 |
+|---|---|---|---|---|
+| v1 | Muda só o patch em relação à anterior **ou** algum commit com fix/hotfix/revert (sugestão do enunciado) | 0,471 | 0,960 | 0,632 |
+| v2 | Muda só o patch em relação à anterior **e** algum commit com fix/hotfix/revert | 0,681 | 0,611 | 0,644 |
+| v3 | A própria versão é um patch (X.Y.Z com Z > 0) | 0,578 | 0,936 | **0,715** |
+| v4 | A própria versão é um patch **e** algum commit com fix/hotfix/revert | 0,671 | 0,762 | 0,714 |
+
+Erros que motivaram cada refinamento:
+
+- **v1 → v2:** dos 136 falsos positivos da v1, 84 eram releases minor ou major com algum
+  commit de correção. Releases com recursos novos quase sempre trazem também alguns `fix`,
+  então o commit sozinho não indica release corretiva. A v2 passou a exigir os dois sinais.
+- **v2 → v3:** a precisão subiu, mas o recall caiu para 0,61 (49 falsos negativos). 24 deles
+  eram releases patch pela própria versão (ex.: `v3.0.15`), cuja "anterior" na ordem de
+  publicação é de outra linha de versão (backport, ex.: `v4.1.1`) ou de outro pacote do
+  monorepo. Outros 17 eram patches sem nenhum commit com fix/hotfix/revert no título: a
+  correção é descrita com outras palavras (ex.: "Properly reset the breakpoint skip…",
+  "Add workaround for Apple GPU hardware bug", "Don't evaluate if() values…") ou o compare
+  só tem commits de versão (ex.: "Changes for 8.6.1"). A v3 olha só o número da própria tag.
+- **v3 → v4:** a v3 passou do limiar de 0,70. Restam 86 falsos positivos, quase todos versões
+  patch que trazem recursos novos (comum em projetos 0.x) ou só atualizam dependências, e 17
+  deles sem commits no compare. A v4 tentou recuperar a precisão exigindo também um commit de
+  correção, mas perdeu recall na mesma proporção (F1 0,714) e não foi adotada.
+
+O CFR (b) usa a **v3**, a de maior F1. Dos 8 falsos negativos que restam, 7 são releases minor
+cujo conteúdo é só de correções (ex.: `remeda v2.44.0`, `itch v26.18.0`) e 1 é uma beta
+(`ustcthesis v4.0.0-beta.10`): casos que nenhuma regra baseada na versão consegue separar.
 
 ## Dicionário de dados
 

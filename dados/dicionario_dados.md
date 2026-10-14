@@ -21,7 +21,7 @@ Tipos: `texto`, `inteiro`, `real`, `data-hora`, `data`, `booleano`.
 
 Uma linha por repositório da amostra final. É o dataset usado nas análises. Traz as colunas de
 `repositorios.csv` (ver abaixo) seguidas das métricas na definição principal (C1): release
-como deploy, lead time (a) e CFR (a).
+como deploy, lead time (a) e CFR (a). O CFR (b) vem em colunas à parte e não entra nas classes.
 
 | Coluna | Tipo | Unidade | Fórmula / origem |
 |---|---|---|---|
@@ -39,6 +39,11 @@ como deploy, lead time (a) e CFR (a).
 | `runs_falha` | inteiro | runs | Runs com `conclusion` em `failure`, `timed_out` ou `startup_failure`. |
 | `runs_sucesso` | inteiro | runs | Runs com `conclusion = success`. |
 | `runs_ignorados` | inteiro | runs | Demais runs (`cancelled`, `skipped`, `neutral`, `action_required`, `stale`, vazio); não entram em nenhum cálculo. |
+| `cfr_entrega` | real | proporção (0–1) | RQ 03 (b): `releases_falharam` ÷ `releases_avaliadas_cfr`. Vazio se nenhuma release pôde ser avaliada. |
+| `releases_falharam` | inteiro | releases | Releases seguidas, em até 7 dias (`metricas.janela_release_corretiva_dias`), por alguma release corretiva. |
+| `releases_avaliadas_cfr` | inteiro | releases | Releases da janela publicadas antes dos últimos 7 dias (denominador do CFR (b)). |
+| `releases_censuradas_cfr` | inteiro | releases | Releases publicadas nos últimos 7 dias da janela: ainda não se sabe se haverá correção; fora do denominador. |
+| `releases_corretivas` | inteiro | releases | Releases que a heurística atual (v3: a própria versão é um patch, X.Y.Z com Z > 0) marcou como corretivas. Base para a rework rate (RQ 08). |
 | `recuperacao_horas` | real | horas | RQ 04: mediana dos episódios recuperados de todos os workflows. Episódio: da primeira falha após um sucesso (`run_started_at`, ou `created_at` se ausente) ao próximo sucesso do mesmo `workflow_id` (`updated_at`). Vazio se não há episódio recuperado. |
 | `episodios_recuperados` | inteiro | episódios | Episódios de falha encerrados por um sucesso dentro da janela. |
 | `episodios_censurados` | inteiro | episódios | Episódios sem sucesso posterior até o fim da janela (censura). |
@@ -247,6 +252,35 @@ ordem das planilhas.
 | `tipo_projeto`, `entregas_reais` (repositórios); `corretiva` (releases) | texto | os valores das planilhas, ou vazio | Rótulo de consenso; vazio quando pendente. |
 | `<dimensao>_regra` | texto | `unanime`, `maioria`, `reuniao`, `pendente` | Regra do protocolo de desempate que definiu o consenso. |
 | `<dimensao>_<avaliador>` | texto | os valores das planilhas | Rótulo dado por cada avaliador. |
+
+### `heuristica_versoes.csv`
+
+Uma linha por versão da heurística de release corretiva (`metricas/corretiva.py`), avaliada
+contra o `corretiva` de `consenso_releases.csv` com `precision_recall_fscore_support`
+(classe positiva: corretiva). Releases sem consenso (`pendente`) ficam de fora.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `versao`, `descricao` | texto | — | Nome e regra da versão. |
+| `releases` | inteiro | releases | Releases avaliadas. |
+| `corretivas_consenso`, `corretivas_heuristica` | inteiro | releases | Corretivas segundo o consenso e segundo a heurística. |
+| `verdadeiros_positivos`, `falsos_positivos`, `falsos_negativos` | inteiro | releases | Acertos e erros da heurística frente ao consenso. |
+| `precisao`, `recall`, `f1` | real | proporção (0–1) | VP ÷ (VP + FP); VP ÷ (VP + FN); 2·P·R ÷ (P + R). |
+
+### `heuristica_erros.csv`
+
+Cada erro de cada versão, para analisar o que motivou o refinamento.
+
+| Coluna | Tipo | Valores | Significado |
+|---|---|---|---|
+| `versao` | texto | `v1`… | Versão da heurística. |
+| `tipo_erro` | texto | `falso positivo`, `falso negativo` | Heurística disse corretiva e o consenso não, ou o contrário. |
+| `repositorio`, `tag`, `tag_anterior` | texto | — | Release com erro. |
+| `muda_so_patch` | booleano | — | A versão sobe só no último número em relação à `tag_anterior`, no mesmo pacote. |
+| `versao_de_patch` | booleano | — | A própria tag é um patch (último número > 0). |
+| `commits` | inteiro | commits | Commits do compare com a anterior. |
+| `commits_correcao` | inteiro | commits | Commits cujo título tem fix, fixes, fixed, hotfix, bugfix ou revert. |
+| `titulos_correcao` | texto | — | Até 5 desses títulos, separados por ` \| `. |
 
 ## Seleção da amostra
 

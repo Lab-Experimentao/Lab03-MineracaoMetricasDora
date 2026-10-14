@@ -1,10 +1,13 @@
+from datetime import datetime, timezone
+
 import pytest
 
-from metricas.consolidacao import calcular_todos, releases_commits, runs
+from metricas.consolidacao import calcular_todos, releases_avaliadas, releases_commits, runs
 
 SUCESSO = frozenset({"success"})
 FALHA = frozenset({"failure", "timed_out", "startup_failure"})
 REPO = "dono/repo"
+FIM_JANELA = datetime(2025, 4, 1, tzinfo=timezone.utc)
 
 
 def compare(tag, anterior, status="ok", publicada="2025-03-15T00:00:00+00:00", cadeia="release"):
@@ -12,8 +15,8 @@ def compare(tag, anterior, status="ok", publicada="2025-03-15T00:00:00+00:00", c
             "tag_anterior": anterior, "status": status}
 
 
-def commit(tag, anterior, data):
-    return {"repositorio": REPO, "tag_anterior": anterior, "tag": tag, "data_autor": data}
+def commit(tag, anterior, data, titulo="feat: algo"):
+    return {"repositorio": REPO, "tag_anterior": anterior, "tag": tag, "data_autor": data, "titulo": titulo}
 
 
 def run(id_, conclusao, inicio, fim, workflow="1", criado=""):
@@ -33,7 +36,7 @@ def linhas_exemplo():
     commits = [
         commit("v1.1", "v1.0", "2025-03-02T00:00:00+00:00"),
         commit("v1.1", "v1.0", "2025-03-10T00:00:00+00:00"),
-        commit("v1.1", "v1.0", "2025-03-14T00:00:00+00:00"),
+        commit("v1.1", "v1.0", "2025-03-14T00:00:00+00:00", titulo="fix: crash ao abrir arquivo"),
     ]
     linhas_runs = [
         run(1, "success", "2025-03-01T09:00:00+00:00", "2025-03-01T09:05:00+00:00"),
@@ -67,7 +70,8 @@ def test_run_sem_run_started_at_usa_created_at():
 def test_metricas_do_repositorio(linhas_exemplo):
     compares, commits, linhas_runs = linhas_exemplo
     [linha] = calcular_todos([{"repositorio": REPO, "estrelas": "1500"}], compares, commits,
-                             linhas_runs, semanas_janela=52.0, sucesso=SUCESSO, falha=FALHA)
+                             linhas_runs, semanas_janela=52.0, sucesso=SUCESSO, falha=FALHA,
+                             fim_janela=FIM_JANELA, dias_corretiva=7)
 
     assert linha["estrelas"] == "1500"  # metadados da coleta são mantidos
     assert linha["releases_janela"] == 3
@@ -77,6 +81,9 @@ def test_metricas_do_repositorio(linhas_exemplo):
     assert (linha["releases_primeira"], linha["releases_compare_erro"]) == (1, 1)
     assert linha["cfr_ci"] == pytest.approx(2 / 4)  # cancelled ignorado
     assert linha["runs_ignorados"] == 1
+    # CFR (b): nenhuma das três é versão patch (v1.0, v1.1, v1.2), então nenhuma falhou.
+    assert (linha["releases_corretivas"], linha["releases_falharam"], linha["releases_avaliadas_cfr"]) == (0, 0, 3)
+    assert linha["cfr_entrega"] == 0.0
     assert linha["recuperacao_horas"] == pytest.approx(80 / 60)  # 1h20
     assert linha["episodios_censurados"] == 0
     assert linha["classe_frequencia"] == "Low"
@@ -87,7 +94,30 @@ def test_metricas_do_repositorio(linhas_exemplo):
 
 
 def test_repositorio_sem_runs_nem_releases_nao_quebra():
-    [linha] = calcular_todos([{"repositorio": REPO}], [], [], [], 52.0, SUCESSO, FALHA)
+    [linha] = calcular_todos([{"repositorio": REPO}], [], [], [], 52.0, SUCESSO, FALHA,
+                             fim_janela=FIM_JANELA, dias_corretiva=7)
     assert linha["releases_janela"] == 0
     assert linha["cfr_ci"] is None and linha["recuperacao_horas"] is None
+    assert linha["cfr_entrega"] is None
     assert linha["classe_cfr"] is None
+
+
+def test_releases_avaliadas_trazem_titulos_dos_commits(linhas_exemplo):
+    compares, commits, _ = linhas_exemplo
+    releases = releases_avaliadas(compares, commits)[REPO]
+    assert [r.tag for r in releases] == ["v1.0", "v1.1", "v1.2"]
+    assert releases[0].tag_anterior is None
+    assert releases[1].titulos_commits == ("feat: algo", "feat: algo", "fix: crash ao abrir arquivo")
+    assert releases[2].titulos_commits == ()  # compare com 404: decide só pela versão
+
+
+def test_release_seguida_por_corretiva_em_7_dias_falha():
+    compares = [
+        compare("v2.3.0", "v2.2.0", publicada="2025-03-10T00:00:00+00:00"),
+        compare("v2.3.1", "v2.3.0", publicada="2025-03-12T00:00:00+00:00"),
+    ]
+    commits = [commit("v2.3.1", "v2.3.0", "2025-03-11T00:00:00+00:00", titulo="fix: crash")]
+    [linha] = calcular_todos([{"repositorio": REPO}], compares, commits, [], 52.0, SUCESSO, FALHA,
+                             fim_janela=FIM_JANELA, dias_corretiva=7)
+    assert (linha["releases_falharam"], linha["releases_avaliadas_cfr"]) == (1, 2)
+    assert linha["cfr_entrega"] == 0.5

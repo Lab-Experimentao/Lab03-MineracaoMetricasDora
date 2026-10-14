@@ -1,0 +1,5 @@
+versao,descricao,releases,corretivas_consenso,corretivas_heuristica,verdadeiros_positivos,falsos_positivos,falsos_negativos,precisao,recall,f1
+v1,muda só o patch em relação à anterior OU algum commit com fix/hotfix/revert,300,126,257,121,136,5,0.4708,0.9603,0.6319
+v2,muda só o patch em relação à anterior E algum commit com fix/hotfix/revert,300,126,113,77,36,49,0.6814,0.6111,0.6444
+v3,a própria versão é um patch (X.Y.Z com Z > 0),300,126,204,118,86,8,0.5784,0.9365,0.7152
+v4,a própria versão é um patch E algum commit com fix/hotfix/revert,300,126,143,96,47,30,0.6713,0.7619,0.7138

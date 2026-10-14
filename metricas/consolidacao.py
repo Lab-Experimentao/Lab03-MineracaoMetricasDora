@@ -1,5 +1,6 @@
 """Monta as entradas das métricas a partir das linhas dos CSVs da coleta e calcula
-as métricas de cada repositório (definição principal: release, lead time e CFR (a)).
+as métricas de cada repositório (definição principal: release, lead time e CFR (a);
+o CFR (b) é calculado à parte e não entra na classificação de referência C1).
 
 Recebe as linhas já lidas (dicts do csv.DictReader), sem acessar o disco.
 """
@@ -12,6 +13,7 @@ from datetime import datetime
 from typing import Any
 
 from metricas.cfr import cfr_ci
+from metricas.corretiva import ReleaseAvaliada, cfr_entrega
 from metricas.classificacao import (
     classificar_cfr,
     classificar_frequencia,
@@ -58,6 +60,29 @@ def releases_commits(
     return resultado
 
 
+def releases_avaliadas(
+    compares: Iterable[Linha], commits: Iterable[Linha], cadeia: str = CADEIA_PRINCIPAL
+) -> dict[str, list[ReleaseAvaliada]]:
+    """Releases da cadeia com os títulos dos commits do compare com a anterior (CFR (b)).
+
+    Compare com erro fica sem títulos: a heurística decide só pela versão.
+    """
+    titulos: dict[tuple[str, str, str], list[str]] = defaultdict(list)
+    for commit in commits:
+        titulos[(commit["repositorio"], commit["tag_anterior"], commit["tag"])].append(commit["titulo"])
+
+    resultado: dict[str, list[ReleaseAvaliada]] = defaultdict(list)
+    for linha in compares:
+        if linha["cadeia"] != cadeia:
+            continue
+        repo, anterior = linha["repositorio"], linha["tag_anterior"]
+        resultado[repo].append(ReleaseAvaliada(
+            linha["tag"], _data(linha["publicada_em"]), anterior or None,
+            tuple(titulos.get((repo, anterior, linha["tag"]), ())),
+        ))
+    return resultado
+
+
 def runs(linhas: Iterable[Linha]) -> dict[str, list[Run]]:
     resultado: dict[str, list[Run]] = defaultdict(list)
     for linha in linhas:
@@ -77,11 +102,16 @@ def calcular_repositorio(
     semanas_janela: float,
     sucesso: frozenset[str],
     falha: frozenset[str],
+    *,
+    avaliadas: list[ReleaseAvaliada],
+    fim_janela: datetime,
+    dias_corretiva: int,
 ) -> dict[str, Any]:
     """Métricas de um repositório e a classificação DORA de referência (C1)."""
     frequencia = len(releases) / semanas_janela
     lead = calcular_lead_time(releases)
     cfr = cfr_ci((r.conclusao for r in runs_repo), sucesso, falha)
+    entrega = cfr_entrega(avaliadas, fim_janela, dias_corretiva)
     recuperacao = tempo_recuperacao(runs_repo, sucesso, falha)
 
     def classe(valor, funcao):
@@ -102,6 +132,11 @@ def calcular_repositorio(
         "runs_falha": cfr.falhas,
         "runs_sucesso": cfr.sucessos,
         "runs_ignorados": cfr.ignorados,
+        "cfr_entrega": entrega.taxa,
+        "releases_falharam": entrega.falhas,
+        "releases_avaliadas_cfr": entrega.avaliadas,
+        "releases_censuradas_cfr": entrega.censuradas,
+        "releases_corretivas": entrega.corretivas,
         "recuperacao_horas": recuperacao.mediana_horas,
         "episodios_recuperados": recuperacao.episodios_recuperados,
         "episodios_censurados": recuperacao.episodios_censurados,
@@ -122,9 +157,17 @@ def calcular_todos(
     semanas_janela: float,
     sucesso: frozenset[str],
     falha: frozenset[str],
+    *,
+    fim_janela: datetime,
+    dias_corretiva: int,
 ) -> list[dict[str, Any]]:
-    """Uma linha por repositório da amostra: metadados da coleta + métricas."""
+    """Uma linha por repositório da amostra: metadados da coleta + métricas.
+
+    `fim_janela` é o fim exclusivo da janela (censura do CFR (b)).
+    """
+    compares, commits = list(compares), list(commits)
     releases_por_repo = releases_commits(compares, commits)
+    avaliadas_por_repo = releases_avaliadas(compares, commits)
     runs_por_repo = runs(linhas_runs)
     return [
         {
@@ -133,6 +176,8 @@ def calcular_todos(
                 releases_por_repo.get(repo["repositorio"], []),
                 runs_por_repo.get(repo["repositorio"], []),
                 semanas_janela, sucesso, falha,
+                avaliadas=avaliadas_por_repo.get(repo["repositorio"], []),
+                fim_janela=fim_janela, dias_corretiva=dias_corretiva,
             ),
         }
         for repo in repositorios
