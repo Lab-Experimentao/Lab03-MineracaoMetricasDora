@@ -132,6 +132,7 @@ def test_main_le_token_do_env_ao_lado_do_config(tmp_path, dados_config, monkeypa
     # Sem rede nos testes: a coleta só registra o token recebido.
     monkeypatch.setattr("coleta.etapa.executar", lambda config, token: tokens.append(token))
     monkeypatch.setattr("metricas.etapa.executar", lambda config: None)
+    monkeypatch.setattr("analise.etapa.executar", lambda config: None)
     monkeypatch.setattr("validacao.etapa.executar", lambda config: None)
     monkeypatch.setattr("tipo_projeto.etapa.executar", lambda config, obter_token: tokens.append(obter_token()))
     assert main(["--config", str(_gravar(tmp_path, dados_config))]) == 0
@@ -153,6 +154,7 @@ def test_main_sem_coleta_nao_exige_token(tmp_path, dados_config, monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     # Sem dados da coleta nos testes: a etapa de métricas é substituída.
     monkeypatch.setattr("metricas.etapa.executar", lambda config: None)
+    monkeypatch.setattr("analise.etapa.executar", lambda config: None)
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "metricas", "analise"]) == 0
     assert (tmp_path / "dados").is_dir()
@@ -168,3 +170,9 @@ def test_validacao_sem_dados_falha_com_mensagem(tmp_path, dados_config, caplog):
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "validacao"]) == 2
     assert "rode antes as etapas de coleta e métricas" in caplog.text
+
+
+def test_analise_sem_metricas_falha_com_mensagem(tmp_path, dados_config, caplog):
+    caminho = _gravar(tmp_path, dados_config)
+    assert main(["--config", str(caminho), "--etapas", "analise"]) == 2
+    assert "metricas.csv" in caplog.text

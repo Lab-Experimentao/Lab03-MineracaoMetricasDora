@@ -84,6 +84,7 @@ def test_metricas_do_repositorio(linhas_exemplo):
     # CFR (b): nenhuma das três é versão patch (v1.0, v1.1, v1.2), então nenhuma falhou.
     assert (linha["releases_corretivas"], linha["releases_falharam"], linha["releases_avaliadas_cfr"]) == (0, 0, 3)
     assert linha["cfr_entrega"] == 0.0
+    assert linha["rework_rate"] == 0.0
     assert linha["recuperacao_horas"] == pytest.approx(80 / 60)  # 1h20
     assert linha["episodios_censurados"] == 0
     assert linha["classe_frequencia"] == "Low"

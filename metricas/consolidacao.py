@@ -158,6 +158,7 @@ def calcular_repositorio(
         "releases_avaliadas_cfr": entrega.avaliadas,
         "releases_censuradas_cfr": entrega.censuradas,
         "releases_corretivas": entrega.corretivas,
+        "rework_rate": entrega.rework_rate,
         "recuperacao_horas": recuperacao.mediana_horas,
         "episodios_recuperados": recuperacao.episodios_recuperados,
         "episodios_censurados": recuperacao.episodios_censurados,

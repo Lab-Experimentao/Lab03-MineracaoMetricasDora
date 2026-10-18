@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import logging
 
+from analise import rq08_rework
 from pipeline.config import Config
 
 log = logging.getLogger(__name__)
 
 
 def executar(config: Config) -> None:
-    # Implementada na Sprint 03 (RQ 01 a RQ 07).
-    log.warning("etapa de análise ainda não implementada")
+    # RQ 01 a RQ 07: Sprint 03.
+    rq08_rework.executar(config)

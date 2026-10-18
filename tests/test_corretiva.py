@@ -203,3 +203,44 @@ def test_janela_configuravel():
         release("v1.0.1", "v1.0.0", dia(9, 5), "fix: bug"),
     ]
     assert cfr_entrega(releases, FIM_JANELA, dias=10, heuristica=v1).falhas == 1
+
+
+# ---------------------------------------------------------------- rework rate (RQ 08)
+
+
+def test_rework_rate_do_exemplo(releases_exemplo):
+    resultado = cfr_entrega(releases_exemplo, FIM_JANELA, heuristica=v1)
+    assert resultado.rework_rate == pytest.approx(1 / 4)  # só v2.3.1 é corretiva
+
+
+def test_rework_conta_a_correcao_e_o_cfr_conta_a_release_que_falhou():
+    """Duas corretivas seguidas: o rework conta as duas; o CFR (b), quem veio antes de cada uma."""
+    releases = [
+        release("v1.0.0", "v0.9.0", dia(1, 5)),
+        release("v1.0.1", "v1.0.0", dia(2, 5), "fix: a"),
+        release("v1.0.2", "v1.0.1", dia(3, 5), "fix: b"),
+        release("v1.1.0", "v1.0.2", dia(1, 6)),
+    ]
+    resultado = cfr_entrega(releases, FIM_JANELA, heuristica=v1)
+    assert resultado.rework_rate == pytest.approx(2 / 4)
+    assert resultado.taxa == pytest.approx(2 / 4)  # v1.0.0 e v1.0.1 falharam
+
+
+def test_corretiva_tardia_entra_no_rework_mas_nao_no_cfr():
+    releases = [
+        release("v1.0.0", "v0.9.0", dia(1, 5)),
+        release("v1.0.1", "v1.0.0", dia(20, 5), "fix: bug antigo"),  # 19 dias depois
+    ]
+    resultado = cfr_entrega(releases, FIM_JANELA, heuristica=v1)
+    assert (resultado.rework_rate, resultado.taxa) == (0.5, 0.0)
+
+
+def test_rework_inclui_releases_censuradas_no_cfr():
+    releases = [release("v1.0.0", "v0.9.0", dia(1, 9)), release("v1.0.1", "v1.0.0", dia(29, 9), "fix: x")]
+    resultado = cfr_entrega(releases, FIM_JANELA, heuristica=v1)
+    assert (resultado.avaliadas, resultado.censuradas) == (1, 1)
+    assert resultado.rework_rate == 0.5  # a v1.0.1 censurada conta no rework
+
+
+def test_rework_sem_releases():
+    assert cfr_entrega([], FIM_JANELA).rework_rate is None

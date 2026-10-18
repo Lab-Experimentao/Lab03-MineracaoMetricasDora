@@ -50,7 +50,8 @@ O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
 preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
 classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
-outro (`dados/tipo_projeto.csv`). A etapa de análise ainda não está implementada (Sprint 03).
+outro (`dados/tipo_projeto.csv`). A etapa de **análise** grava as tabelas e gráficos das RQs em
+`dados/analise/`; por enquanto, só a RQ 08 (as RQ 01 a 07 são da Sprint 03).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -329,7 +330,8 @@ As funções de cálculo ficam em `metricas/` e têm testes com os exemplos do e
 | `runs_flaky_reexecucao` | runs | Runs reexecutados que terminaram em sucesso. |
 | `cfr_entrega` | proporção (0–1) | (b) Releases seguidas por uma release corretiva em até 7 dias ÷ releases avaliadas. Não entra na classificação C1. |
 | `releases_falharam`, `releases_avaliadas_cfr`, `releases_censuradas_cfr` | releases | Contagens do CFR (b). As releases dos últimos 7 dias da janela são censuradas: ficam fora do denominador. |
-| `releases_corretivas` | releases | Releases marcadas como corretivas pela heurística (base da rework rate, RQ 08). |
+| `releases_corretivas` | releases | Releases marcadas como corretivas pela heurística. |
+| `rework_rate` | proporção (0–1) | RQ 08: `releases_corretivas` ÷ `releases_janela`. Sem censura: ser corretiva depende só da própria release. |
 | `recuperacao_horas` | horas | Mediana dos episódios de falha de todos os workflows: da primeira falha após um sucesso (`run_started_at`) ao próximo sucesso do mesmo workflow (`updated_at`). |
 | `episodios_recuperados`, `episodios_censurados` | episódios | Episódios encerrados e não encerrados até o fim da janela. |
 | `proporcao_censurados` | proporção (0–1) | Censurados ÷ total de episódios. |
@@ -517,6 +519,58 @@ bibliotecas. Também há casos ambíguos, como motores de jogo e módulos PowerS
 estimativa sem esse viés, o grupo pode rotular uma amostra nova, fora dos 60, e compará-la
 com `tipo_heuristica`.
 
+## RQ 08 (bônus): rework rate (`dados/analise/rq08_*`)
+
+Das duas opções do bônus, o grupo escolheu a **rework rate**: a proporção de releases
+corretivas sobre o total de releases da janela, com a mesma heurística de release corretiva
+do CFR (b) (v3). A outra opção, a evolução por trimestre com Mann-Kendall, foi descartada
+porque a janela de 12 meses dá só 4 trimestres por repositório. Com n = 4, o menor p-valor
+possível do teste, para uma série perfeitamente monotônica, é 0,089: nenhum repositório
+poderia ter tendência significativa a 5%.
+
+```bash
+python -m pipeline --config config.yaml --etapas analise   # ou: python -m analise.rq08_rework
+```
+
+O script (`analise/rq08_rework.py`) lê só `dados/metricas.csv` e
+`dados/validacao/consenso_releases.csv`, sem acessar a API.
+
+| Arquivo | Conteúdo |
+|---|---|
+| `rq08_resumo.csv` | Mediana, quartis, IQR, mínimo e máximo da rework rate e do CFR (b). |
+| `rq08_comparacao.csv` | Spearman entre as duas métricas, Wilcoxon pareado, mediana da diferença e quantos repositórios têm rework maior, igual ou menor que o CFR (b). |
+| `rq08_amostra_ouro.csv` | Proporção de releases corretivas nas 300 releases rotuladas, segundo o consenso dos avaliadores e segundo a heurística. |
+| `rq08_rework_vs_cfr.png` | Dispersão da rework rate (x) contra o CFR (b) (y), com a diagonal. |
+
+**Resultados:**
+
+| Métrica | n | Mediana | IQR |
+|---|---|---|---|
+| Rework rate | 300 | 0,680 | 0,429 – 0,867 |
+| CFR (b) | 299 | 0,375 | 0,167 – 0,696 |
+
+As duas métricas têm correlação moderada (Spearman ρ = 0,50, p < 0,001), mas a rework rate é
+sistematicamente maior (Wilcoxon pareado, p < 0,001; mediana da diferença = 0,14): 203
+repositórios têm rework maior que o CFR (b), 23 iguais e 73 menores.
+
+**Por que as duas diferem:**
+
+- **O que contam:** a rework rate conta as releases de correção; o CFR (b) conta as releases
+  que **precisaram** de correção (as que vieram antes de uma corretiva).
+- **Prazo:** o CFR (b) só considera correções em até 7 dias. Uma correção mais tardia entra na
+  rework rate e não no CFR (b). Por isso há repositórios com rework perto de 1 e CFR (b) = 0:
+  quase toda release é um patch, mas publicada mais de 7 dias depois da anterior.
+- **Correções em sequência e releases próximas:** duas corretivas seguidas contam duas vezes
+  na rework rate. Já uma única corretiva marca como falha **todas** as releases dos 7 dias
+  anteriores, o que explica os 73 repositórios com CFR (b) maior que a rework rate.
+- **Censura:** a rework rate não precisa de censura e usa todas as releases; o CFR (b)
+  exclui as dos últimos 7 dias da janela.
+
+**Viés da heurística:** nas 300 releases da amostra-ouro, os avaliadores consideraram
+corretivas 126 (42,0%) e a heurística v3, 204 (68,0%). Como a precisão da v3 é 0,578, a
+rework rate do dataset está superestimada: o valor real deve ficar mais perto de 40% do que
+dos 68% da mediana. O mesmo viés atinge o CFR (b), que usa a mesma heurística.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
@@ -532,7 +586,7 @@ metricas/   funções puras de cálculo das métricas DORA
 validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância, consenso e
             validação das heurísticas (release corretiva e tipo de projeto)
 tipo_projeto/ etapa que classifica o tipo de projeto dos 300 repositórios
-analise/    análise estatística das RQs
+analise/    análise estatística das RQs (por enquanto, a RQ 08: analise/rq08_rework.py)
 tests/      testes com pytest
 ```
 

@@ -1,0 +1,10 @@
+medida,valor
+n (repositórios com as duas métricas),299.0
+Spearman rho,0.503240826422467
+Spearman p-valor,1.335502185656394e-20
+Wilcoxon pareado (estatística),5970.5
+Wilcoxon pareado p-valor,4.073694058555804e-23
+mediana da diferença (rework - CFR b),0.1428571428571429
+repositórios com rework > CFR b,203.0
+repositórios com rework = CFR b,23.0
+repositórios com rework < CFR b,73.0
