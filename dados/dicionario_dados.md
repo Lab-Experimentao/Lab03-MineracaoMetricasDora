@@ -457,6 +457,24 @@ abaixo da geral (o que puxa a classificação para baixo).
 | `repositorios` | inteiro | repositórios | Repositórios na classe. |
 | `frequencia_abaixo`, `lead_time_abaixo`, `cfr_abaixo`, `recuperacao_abaixo` | inteiro | repositórios | Repositórios em que a dimensão tem nota menor que a classe geral. |
 
+### `rq05_spearman.csv`
+
+Correlação de Spearman entre `deploys_por_semana` e cada variante do CFR (`analise/correlacao.py`),
+uma linha por variante.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `variante` | texto | — | `(a)` ou `(b)`. |
+| `metrica_cfr` | texto | — | `cfr_ci` (a) ou `cfr_entrega` (b). |
+| `descricao` | texto | — | Nome da variante. |
+| `n` | inteiro | repositórios | Repositórios com frequência e CFR preenchidos. |
+| `sem_par` | inteiro | repositórios | Repositórios sem o CFR da variante, fora do cálculo. |
+| `cfr_zero` | inteiro | repositórios | Repositórios com CFR igual a 0 (no gráfico, ficam na faixa de baixo). |
+| `rho` | real | −1 a 1 | `scipy.stats.spearmanr`, com postos médios nos empates. |
+| `p_valor` | real | — | Bilateral, de `spearmanr`. |
+
+`rq05_dispersao.png` mostra os mesmos pares, com os dois eixos em escala log.
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

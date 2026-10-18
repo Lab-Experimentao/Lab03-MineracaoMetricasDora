@@ -1,0 +1,3 @@
+variante,metrica_cfr,descricao,n,sem_par,cfr_zero,rho,p_valor
+(a),cfr_ci,CFR de CI,300,0,11,0.1042,0.0715
+(b),cfr_entrega,CFR de entrega (release corretiva em até 7 dias),299,1,38,0.6349,0.0000

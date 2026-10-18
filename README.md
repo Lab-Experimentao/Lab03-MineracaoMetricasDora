@@ -603,6 +603,25 @@ os Elite. A referência fica com o arredondamento para baixo, o mais conservador
 escolha entra nas ameaças à validade. Dar Elite em recuperação aos 11 repositórios sem falha
 muda pouco: 6 repositórios sobem uma classe.
 
+## RQ 05: velocidade x estabilidade (`dados/analise/rq05_*`)
+
+Correlação de Spearman entre `deploys_por_semana` e o CFR, separada por variante
+(`analise/correlacao.py`). Entram só os repositórios com os dois valores. O gráfico
+`rq05_dispersao.png` usa escala log nos dois eixos, e os repositórios com CFR igual a 0 ficam
+numa faixa abaixo do menor valor positivo.
+
+| Variante | n | CFR = 0 | ρ | p-valor |
+|---|---|---|---|---|
+| (a) CFR de CI | 300 | 11 | 0,10 | 0,072 |
+| (b) CFR de entrega | 299 | 38 | 0,63 | < 0,001 |
+
+Com o CFR de CI, não há relação: ρ fica perto de zero e não é significativo a 5%. Fazer
+deploy com mais frequência não vem acompanhado de mais falhas no CI. Com o CFR de entrega, a
+correlação é forte e positiva, mas parte dela vem da própria definição: uma release só falha se
+outra, corretiva, sair em até 7 dias, e quem publica várias releases por semana tem muito mais
+chance de ter uma release logo depois da anterior. Por isso o resultado de (b) não deve ser lido
+como "quem entrega mais rápido quebra mais", e essa limitação entra nas ameaças à validade.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil, amostra-ouro e análise), com nome,
