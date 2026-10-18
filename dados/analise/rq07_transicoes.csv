@@ -1,0 +1,13 @@
+par,classe_a,para_Elite,para_High,para_Medium,para_Low,repositorios
+C1xC2,Elite,3,22,5,4,34
+C1xC2,High,2,67,55,6,130
+C1xC2,Medium,2,17,84,10,113
+C1xC2,Low,0,0,13,10,23
+C1xC3,Elite,26,7,1,0,34
+C1xC3,High,20,99,11,0,130
+C1xC3,Medium,3,31,77,2,113
+C1xC3,Low,0,0,9,14,23
+C2xC3,Elite,7,0,0,0,7
+C2xC3,High,37,68,1,0,106
+C2xC3,Medium,5,62,85,5,157
+C2xC3,Low,0,7,12,11,30

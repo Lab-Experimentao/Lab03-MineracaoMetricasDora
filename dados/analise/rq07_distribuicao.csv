@@ -1,0 +1,4 @@
+combinacao,unidade_deploy,lead_time_variante,cfr_variante,Elite,High,Medium,Low,sem_dados
+C1,release,a,a,34,130,113,23,0
+C2,release + pré-release,b,b,7,106,157,30,0
+C3,tag,b,a,49,137,98,16,0

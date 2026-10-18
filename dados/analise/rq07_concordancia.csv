@@ -1,0 +1,13 @@
+par,combinacao_a,combinacao_b,dimensao,repositorios,sem_classe,mudam,proporcao_mudam,sobem,descem,mudam_duas_ou_mais,kappa_linear,interpretacao
+C1xC2,C1,C2,geral,300,0,136,0.4533,34,102,17,0.3493,razoável
+C1xC3,C1,C3,geral,300,0,84,0.2800,63,21,4,0.6550,substancial
+C2xC3,C2,C3,geral,300,0,129,0.4300,123,6,12,0.4479,moderada
+C1xC2,C1,C2,frequencia,300,0,31,0.1033,31,0,4,0.8515,quase perfeita
+C1xC3,C1,C3,frequencia,300,0,55,0.1833,54,1,8,0.7441,substancial
+C2xC3,C2,C3,frequencia,300,0,27,0.0900,25,2,3,0.8833,quase perfeita
+C1xC2,C1,C2,lead_time,300,0,138,0.4600,92,46,26,0.5269,moderada
+C1xC3,C1,C3,lead_time,300,0,147,0.4900,101,46,30,0.4875,moderada
+C2xC3,C2,C3,lead_time,300,0,24,0.0800,18,6,2,0.9267,quase perfeita
+C1xC2,C1,C2,cfr,299,1,229,0.7659,16,213,164,0.0239,leve
+C1xC3,C1,C3,cfr,300,0,0,0.0000,0,0,0,1.0000,quase perfeita
+C2xC3,C2,C3,cfr,299,1,229,0.7659,213,16,164,0.0239,leve

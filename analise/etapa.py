@@ -21,6 +21,11 @@ RQ 06 (fatores associados ao desempenho), com o tipo de projeto de `dados/tipo_p
 - `rq06_grupos.csv`: mediana e quartis de cada métrica por grupo;
 - `rq06_cliff.csv`: Cliff's delta entre grupos;
 - `rq06_<fator>.png`: boxplots dos fatores com algum teste significativo.
+
+RQ 07 (sensibilidade às definições), a partir de `dados/metricas_combinacoes.csv`:
+- `rq07_distribuicao.csv`: classe geral em cada combinação (C1, C2, C3);
+- `rq07_concordancia.csv`: % que muda de classe e kappa de Cohen ponderado por par e dimensão;
+- `rq07_transicoes.csv`: matriz de transição da classe geral por par.
 """
 
 from __future__ import annotations
@@ -31,6 +36,7 @@ from pathlib import Path
 import pandas as pd
 
 from analise.classificacao import CLASSES, dimensao_limitante, distribuicao, perfil_metricas_usadas, sensibilidade
+from analise.combinacoes import concordancia_pares, distribuicao as distribuicao_combinacoes, transicoes
 from analise.correlacao import grafico_dispersao, spearman
 from analise.fatores import comparar_grupos, graficos_fatores, grupos_fatores, resumo_grupos, tabela_cliff
 from analise.descritiva import (
@@ -46,6 +52,7 @@ log = logging.getLogger(__name__)
 
 ARQUIVO_METRICAS = "metricas.csv"
 ARQUIVO_TIPOS = "tipo_projeto.csv"
+ARQUIVO_COMBINACOES = "metricas_combinacoes.csv"
 DIR_ANALISE = "analise"
 
 
@@ -124,3 +131,18 @@ def executar(config: Config) -> None:
     log.info("RQ06: %d de %d testes significativos após Holm", resultado["significativo"].sum(), len(resultado))
     for caminho in graficos_fatores(df, grupos, resultado, destino):
         log.info("gravado %s", caminho)
+
+    arquivo_combinacoes = config.saida_dir / ARQUIVO_COMBINACOES
+    if not arquivo_combinacoes.is_file():
+        raise FileNotFoundError(f"{arquivo_combinacoes} não encontrado; rode antes a etapa de métricas")
+    por_combinacao = pd.read_csv(arquivo_combinacoes)
+    tabela_combinacoes = distribuicao_combinacoes(por_combinacao)
+    _gravar(tabela_combinacoes, destino / "rq07_distribuicao.csv")
+    for linha in tabela_combinacoes.itertuples():
+        log.info("RQ07 %s: %s", linha.combinacao, ", ".join(f"{c} {getattr(linha, c)}" for c in CLASSES))
+    pares = concordancia_pares(por_combinacao)
+    _gravar(pares, destino / "rq07_concordancia.csv")
+    for linha in pares[pares["dimensao"] == "geral"].itertuples():
+        log.info("RQ07 %s: %d de %d mudam de classe (%.1f%%), kappa linear %.3f (%s)", linha.par, linha.mudam,
+                 linha.repositorios, 100 * linha.proporcao_mudam, linha.kappa_linear, linha.interpretacao)
+    _gravar(transicoes(por_combinacao), destino / "rq07_transicoes.csv")
