@@ -46,13 +46,13 @@ Opções:
 | `-v`, `--verbose` | Log detalhado. |
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
-`dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
+`dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv` (e
+`dados/metricas_combinacoes.csv`, com as combinações da RQ 07), e
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
 preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
 classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
-outro (`dados/tipo_projeto.csv`). A de **análise** lê `dados/metricas.csv` e grava as tabelas
-das RQs em `dados/analise/` (por enquanto, a estatística descritiva das RQ 01 a RQ 04 e a
-distribuição da classificação DORA de referência).
+outro (`dados/tipo_projeto.csv`). A de **análise** lê esses arquivos e grava as tabelas e os
+gráficos das RQ 01 a RQ 07 em `dados/analise/`.
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -521,7 +521,8 @@ com `tipo_heuristica`.
 
 ## Estatística descritiva das RQ 01 a RQ 04 (`dados/analise/`)
 
-A etapa `analise` lê só `dados/metricas.csv` (não precisa de token nem de `dados/brutos/`):
+A etapa `analise` lê só `dados/metricas.csv`, `dados/metricas_combinacoes.csv` e
+`dados/tipo_projeto.csv` (não precisa de token nem de `dados/brutos/`):
 
 ```bash
 python -m pipeline --config config.yaml --etapas analise
@@ -621,6 +622,84 @@ correlação é forte e positiva, mas parte dela vem da própria definição: um
 outra, corretiva, sair em até 7 dias, e quem publica várias releases por semana tem muito mais
 chance de ter uma release logo depois da anterior. Por isso o resultado de (b) não deve ser lido
 como "quem entrega mais rápido quebra mais", e essa limitação entra nas ameaças à validade.
+
+## RQ 06: características associadas ao desempenho (`dados/analise/rq06_*`)
+
+Cinco fatores (`analise/fatores.py`), comparados nas quatro métricas da C1 (frequência de
+deploy, lead time (a), CFR de CI e tempo de recuperação):
+
+| Fator | Grupos |
+|---|---|
+| Linguagem | as 5 mais frequentes (TypeScript, Go, Rust, Python, C++) e `outras` (94) |
+| Estrelas | quartis (cortes em 1.620, 3.310 e 7.660) |
+| Contribuidores | quartis (cortes em 27, 76 e 178) |
+| Idade no fim da janela | quartis (cortes em 1,5, 6,1 e 10,3 anos) |
+| Tipo de projeto | os 4 tipos de `dados/tipo_projeto.csv` (`outro` tem só 10 repositórios) |
+
+Para cada par fator × métrica, o teste é o de Kruskal-Wallis (com 2 grupos seria o de
+Mann-Whitney), e os 20 p-valores são corrigidos juntos pelo método de Holm. O tamanho de efeito
+é o ε² = H ÷ (n − 1), e o Cliff's delta compara Q4 com Q1 nos fatores em quartis e todos os pares
+nos demais. As medianas de cada grupo estão em `rq06_grupos.csv`, e há um boxplot
+(`rq06_<fator>.png`) para cada fator com algum resultado significativo.
+
+Só 3 dos 20 testes ficam significativos depois da correção:
+
+| Fator | Métrica | p (Holm) | ε² | Mediana Q1 → Q4 | Cliff Q4 × Q1 |
+|---|---|---|---|---|---|
+| Idade | Lead time (a) | < 0,001 | 0,120 (médio) | 36 h → 264 h | 0,47 (médio) |
+| Idade | Deploys por semana | 0,002 | 0,071 (pequeno) | 0,61 → 0,27 | −0,45 (médio) |
+| Contribuidores | Lead time (a) | 0,017 | 0,055 (pequeno) | 75 h → 340 h | 0,37 (médio) |
+
+Os repositórios mais novos (até 1,5 ano) publicam releases com mais frequência e com lead time
+bem menor. Nos repositórios com mais contribuidores o lead time também é maior. Os dois fatores
+andam juntos (Spearman 0,57 entre idade e contribuidores), então não dá para separar o efeito de
+cada um só com esses testes. O CFR de CI e o tempo de recuperação não variam com nenhum fator, e
+estrelas e tipo de projeto não aparecem em nenhum resultado significativo. Linguagem chega perto
+no lead time e na recuperação (p sem correção de 0,004 e 0,005), mas não passa pela correção de
+Holm. Mesmo nos resultados significativos o ε² fica entre pequeno e médio: os fatores explicam
+pouco da variação entre os repositórios.
+
+## RQ 07: sensibilidade às definições operacionais (`dados/analise/rq07_*`)
+
+A etapa de métricas recalcula as quatro métricas e a classificação em três combinações de
+definições (`metricas/combinacoes.py`) e grava `dados/metricas_combinacoes.csv`. As cadeias de
+pré-releases e de tags já vêm da coleta (`compares.csv`), então nada é coletado de novo. O tempo
+de recuperação vem dos workflow runs e é o mesmo nas três.
+
+| Combinação | Unidade de deploy | Lead time | CFR | Elite | High | Medium | Low |
+|---|---|---|---|---|---|---|---|
+| C1 (referência) | release | (a) | (a) CI | 34 | 130 | 113 | 23 |
+| C2 | release + pré-release | (b) | (b) entrega | 7 | 106 | 157 | 30 |
+| C3 | tag | (b) | (a) CI | 49 | 137 | 98 | 16 |
+
+Para cada par, a etapa `analise` (`analise/combinacoes.py`) conta os repositórios que mudam de
+classe e calcula o kappa de Cohen ponderado (`weights='linear'`), em que uma troca Elite → High
+pesa menos que Elite → Low. A matriz de transição de cada par está em `rq07_transicoes.csv`.
+
+| Par | Mudam de classe | Sobem | Descem | Kappa linear |
+|---|---|---|---|---|
+| C1 × C2 | 136 (45,3%) | 34 | 102 | 0,35 (razoável) |
+| C1 × C3 | 84 (28,0%) | 63 | 21 | 0,66 (substancial) |
+| C2 × C3 | 129 (43,0%) | 123 | 6 | 0,45 (moderada) |
+
+**O que mais muda a classe é o CFR.** Entre C1 e C2, a classe do CFR muda em 77% dos
+repositórios (kappa 0,02): o CFR de entrega tem mediana de 40%, contra 6% do CFR de CI, e 213
+repositórios descem nessa dimensão. Por isso a C2 tem só 7 Elite e é a mais pessimista. A
+segunda maior fonte de mudança é a variante do lead time: (a) e (b) discordam na classe de 46%
+a 49% dos repositórios, e o (b) tende a ser menor, o que faz 92 a 101 repositórios subirem. A
+unidade de deploy pesa pouco: a frequência muda de classe em 10% (C1 × C2) a 18% (C1 × C3) dos
+casos, sempre para cima, porque pré-releases e tags só acrescentam itens. A C3, com tags e lead
+time (b), é a mais otimista (49 Elite).
+
+**Robustez das RQ 01 a 06.** Mesmo no par mais parecido (C1 × C3), mais de um quarto dos
+repositórios troca de classe, e quase todas as mudanças são de uma classe só (4 de 84 mudam duas
+ou mais). Então a forma geral da distribuição se mantém (a maioria fica em High e Medium em
+todas as combinações), mas a classe de um repositório específico depende da definição. As
+conclusões mais sensíveis são as que dependem do CFR: com o CFR de CI quase todo repositório é
+Elite nessa dimensão, e com o de entrega quase nenhum. Isso também aparece na RQ 05, em que só o
+CFR (b) se correlaciona com a frequência. As conclusões da RQ 06 usam as métricas da C1, e as que
+envolvem o lead time (idade e contribuidores) devem ser lidas junto com a diferença de 46% a 49%
+entre as variantes (a) e (b).
 
 ## Dicionário de dados
 
