@@ -409,6 +409,54 @@ CFR de CI em três cenários de flakiness, uma linha por cenário.
 | `parcela_flaky_agregada` | real | proporção (0–1) | (`cfr_agregado` − `cfr_agregado` de `sem_flaky`) ÷ `cfr_agregado`: fração da taxa que vem de flakiness. |
 | `parcela_flaky_mediana` | real | proporção (0–1) | A mesma fração calculada por repositório; mediana entre os repositórios com CFR > 0. |
 
+### `classificacao_distribuicao.csv`
+
+Distribuição da classificação DORA de referência (C1), em formato longo: uma linha por
+dimensão × classe (`analise/classificacao.py`).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `dimensao` | texto | — | `frequencia`, `lead_time`, `cfr`, `recuperacao` (colunas `classe_*` de `metricas.csv`) ou `geral` (`classe_geral`). |
+| `classe` | texto | — | `Elite`, `High`, `Medium`, `Low` ou `sem dados` (classe vazia). |
+| `repositorios` | inteiro | repositórios | Repositórios na classe. |
+| `proporcao` | real | proporção (0–1) | `repositorios` ÷ total da amostra. |
+
+### `classificacao_metricas_usadas.csv`
+
+Classe geral pelo número de dimensões que entraram na mediana e pelo motivo de faltar o tempo
+de recuperação. Só aparecem as combinações com algum repositório.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `situacao_recuperacao` | texto | — | `com recuperação`; `sem falha de CI` (`runs_falha = 0`); `só episódios censurados` (nenhum episódio recuperado, algum censurado); `falhas só antes do primeiro sucesso` (as falhas não abriram episódio). |
+| `metricas_usadas` | inteiro | dimensões | Dimensões com classe (4, ou 3 sem recuperação). |
+| `Elite`, `High`, `Medium`, `Low` | inteiro | repositórios | Repositórios em cada classe geral. |
+| `repositorios` | inteiro | repositórios | Total da linha. |
+
+### `classificacao_sensibilidade.csv`
+
+Classe geral recalculada (`metricas.classificacao.categoria_geral`) em cenários alternativos.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `cenario` | texto | — | `referencia` (C1, igual a `classe_geral`); `arredondamento_para_cima` (medianas terminadas em ,5 vão para a classe de cima); `sem_falha_como_elite` (repositórios com `runs_falha = 0` recebem Elite em recuperação). |
+| `descricao` | texto | — | Explicação do cenário. |
+| `Elite`, `High`, `Medium`, `Low` | inteiro | repositórios | Repositórios em cada classe geral. |
+| `sem_dados` | inteiro | repositórios | Repositórios sem nenhuma dimensão com classe. |
+| `empates` | inteiro | repositórios | Repositórios cuja mediana das notas termina em ,5: o arredondamento decide a classe. |
+| `mudam_de_classe` | inteiro | repositórios | Repositórios com classe geral diferente da `referencia`. |
+
+### `classificacao_limitante.csv`
+
+Uma linha por classe geral, mais `todas`: quantos repositórios têm cada dimensão com classe
+abaixo da geral (o que puxa a classificação para baixo).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `classe_geral` | texto | — | `Elite`, `High`, `Medium`, `Low` ou `todas`. |
+| `repositorios` | inteiro | repositórios | Repositórios na classe. |
+| `frequencia_abaixo`, `lead_time_abaixo`, `cfr_abaixo`, `recuperacao_abaixo` | inteiro | repositórios | Repositórios em que a dimensão tem nota menor que a classe geral. |
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Callable
 from enum import IntEnum
 from statistics import median
 
@@ -65,12 +66,18 @@ def classificar_recuperacao(horas: float) -> Categoria:
     return Categoria.LOW
 
 
-def categoria_geral(notas: list[Categoria | None]) -> Categoria | None:
-    """Mediana das notas, arredondada para baixo; métricas sem valor (None) ficam de fora."""
+def categoria_geral(
+    notas: list[Categoria | None], arredondar: Callable[[float], int] = math.floor,
+) -> Categoria | None:
+    """Mediana das notas, arredondada para baixo; métricas sem valor (None) ficam de fora.
+
+    `arredondar` troca o critério de desempate de medianas terminadas em ,5 (ex.: `math.ceil`,
+    na análise de sensibilidade).
+    """
     validas = [int(n) for n in notas if n is not None]
     if not validas:
         return None
-    return Categoria(math.floor(median(validas)))
+    return Categoria(arredondar(median(validas)))
 
 
 def classificar_repositorio(

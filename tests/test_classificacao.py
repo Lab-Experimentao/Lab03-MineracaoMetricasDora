@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 from metricas.classificacao import (
@@ -56,6 +58,11 @@ def test_exemplo_do_enunciado(notas_exemplo):
 
 def test_mediana_fracionaria_arredonda_para_baixo():
     assert categoria_geral([E, H, M, L]) is M  # mediana 2,5
+
+
+def test_arredondamento_para_cima_so_muda_empates():
+    assert categoria_geral([E, H, M, L], arredondar=math.ceil) is H  # mediana 2,5
+    assert categoria_geral([E, H, H, L], arredondar=math.ceil) is H  # mediana 3
 
 
 def test_metrica_ausente_fica_de_fora():

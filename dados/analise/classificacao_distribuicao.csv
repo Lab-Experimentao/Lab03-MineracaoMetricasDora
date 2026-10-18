@@ -1,0 +1,26 @@
+dimensao,classe,repositorios,proporcao
+frequencia,Elite,5,0.0167
+frequencia,High,57,0.1900
+frequencia,Medium,140,0.4667
+frequencia,Low,98,0.3267
+frequencia,sem dados,0,0.0000
+lead_time,Elite,73,0.2433
+lead_time,High,76,0.2533
+lead_time,Medium,87,0.2900
+lead_time,Low,64,0.2133
+lead_time,sem dados,0,0.0000
+cfr,Elite,239,0.7967
+cfr,High,32,0.1067
+cfr,Medium,13,0.0433
+cfr,Low,16,0.0533
+cfr,sem dados,0,0.0000
+recuperacao,Elite,102,0.3400
+recuperacao,High,135,0.4500
+recuperacao,Medium,38,0.1267
+recuperacao,Low,8,0.0267
+recuperacao,sem dados,17,0.0567
+geral,Elite,34,0.1133
+geral,High,130,0.4333
+geral,Medium,113,0.3767
+geral,Low,23,0.0767
+geral,sem dados,0,0.0000
