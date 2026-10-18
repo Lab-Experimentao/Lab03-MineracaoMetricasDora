@@ -17,4 +17,4 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Rodar testes com cobertura
-        run: pytest --cov=metricas --cov-report=term-missing --cov-fail-under=80
+        run: pytest --cov=metricas --cov=analise --cov-report=term-missing --cov-fail-under=80

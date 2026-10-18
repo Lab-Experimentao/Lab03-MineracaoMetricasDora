@@ -1,0 +1,8 @@
+rq,metrica,descricao,unidade,n,ausentes,minimo,q1,mediana,q3,iqr,maximo,media
+RQ01,deploys_por_semana,frequência de deploy,releases/semana,300,0,0.0959,0.1918,0.3452,0.8486,0.6568,23.6082,0.9941
+RQ02 (a),lead_time_release_horas,lead time por release (commit mais antigo),horas,300,0,0.0097,24.6226,174.6649,595.6810,571.0584,55122.9668,1072.8406
+RQ02 (b),lead_time_commit_horas,lead time por commit,horas,300,0,0.0097,21.2508,137.8558,617.9928,596.7420,56278.8672,1546.0233
+RQ03 (a),cfr_ci,CFR de CI,proporção,300,0,0.0000,0.0255,0.0598,0.1284,0.1030,1.0000,0.1097
+RQ03 (a),cfr_ci_sem_flaky,CFR de CI sem falhas flaky no mesmo commit,proporção,300,0,0.0000,0.0255,0.0598,0.1284,0.1030,1.0000,0.1097
+RQ03 (b),cfr_entrega,CFR de entrega (release corretiva em até 7 dias),proporção,299,1,0.0000,0.1667,0.3750,0.6963,0.5296,1.0000,0.4277
+RQ04,recuperacao_horas,tempo de recuperação,horas,283,17,0.0100,0.5544,1.9692,12.2128,11.6585,1175.7932,25.0583

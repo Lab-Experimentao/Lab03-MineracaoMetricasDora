@@ -337,6 +337,78 @@ Tipo de projeto dos 300 repositórios, para a RQ 06.
 | `tipo_projeto` | texto | os quatro tipos | Tipo usado na análise: `tipo_consenso` quando existe; senão, `tipo_heuristica`. |
 | `origem` | texto | `consenso`, `heuristica` | De onde veio `tipo_projeto`. |
 
+## Análise (`dados/analise/`)
+
+Gerados pela etapa `analise` a partir de `metricas.csv` (`analise/descritiva.py`). Reais com 4
+casas decimais. Os quartis usam `Series.quantile` (interpolação linear), e os valores ausentes
+ficam de fora.
+
+### `descritiva_rq01_rq04.csv`
+
+Uma linha por métrica das RQ 01 a RQ 04, resumindo os repositórios.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `rq` | texto | — | `RQ01`, `RQ02 (a)`, `RQ02 (b)`, `RQ03 (a)`, `RQ03 (b)` ou `RQ04`. |
+| `metrica` | texto | — | Coluna de `metricas.csv`: `deploys_por_semana`, `lead_time_release_horas`, `lead_time_commit_horas`, `cfr_ci`, `cfr_ci_sem_flaky`, `cfr_entrega`, `recuperacao_horas`. |
+| `descricao`, `unidade` | texto | — | Nome legível e unidade da métrica. |
+| `n` | inteiro | repositórios | Repositórios com valor. |
+| `ausentes` | inteiro | repositórios | Repositórios com a métrica vazia. |
+| `minimo`, `q1`, `mediana`, `q3`, `maximo`, `media` | real | a da métrica | Estatísticas entre os repositórios. |
+| `iqr` | real | a da métrica | `q3` − `q1`. |
+
+### `censura.csv`
+
+Uma linha para cada métrica com censura à direita: a RQ 04 (episódios) e a RQ 03 (b) (releases).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `rq`, `metrica` | texto | — | `RQ04` / `recuperacao_horas` ou `RQ03 (b)` / `cfr_entrega`. |
+| `unidade` | texto | — | `episódios` ou `releases`. |
+| `observados` | inteiro | a da linha | Soma de `episodios_recuperados` ou de `releases_avaliadas_cfr`. |
+| `censurados` | inteiro | a da linha | Soma de `episodios_censurados` ou de `releases_censuradas_cfr`. |
+| `proporcao_censurados` | real | proporção (0–1) | `censurados` ÷ (`observados` + `censurados`). |
+| `repositorios_com_censura` | inteiro | repositórios | Repositórios com pelo menos um censurado. |
+| `repositorios_sem_valor` | inteiro | repositórios | Repositórios com a métrica vazia. |
+
+### `lead_time_divergencia_repositorios.csv`
+
+Uma linha por repositório com as duas variantes do lead time.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorio`, `lead_time_release_horas`, `lead_time_commit_horas`, `releases_lead_time` | — | — | Iguais a `metricas.csv`. |
+| `diferenca_horas` | real | horas | `lead_time_commit_horas` − `lead_time_release_horas` (b − a). |
+| `razao` | real | — | `lead_time_commit_horas` ÷ `lead_time_release_horas` (b ÷ a); vazio se (a) = 0. |
+
+### `lead_time_divergencia.csv`
+
+Uma linha com o resumo da divergência entre (a) e (b).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorios` | inteiro | repositórios | Repositórios com as duas variantes. |
+| `mediana_a_horas`, `mediana_b_horas` | real | horas | Medianas de (a) e (b) entre os repositórios. |
+| `commit_maior`, `commit_menor`, `iguais` | inteiro | repositórios | Repositórios com (b) > (a), (b) < (a) e (b) = (a). |
+| `mediana_diferenca_horas` | real | horas | Mediana de `diferenca_horas`. |
+| `mediana_razao`, `q1_razao`, `q3_razao` | real | — | Mediana e quartis de `razao`. |
+| `spearman` | real | — | Correlação de Spearman entre (a) e (b). |
+
+### `cfr_flaky.csv`
+
+CFR de CI em três cenários de flakiness, uma linha por cenário.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `cenario` | texto | — | `sem_flaky`: falhas = `runs_falha` − `falhas_flaky_mesmo_commit`. `atual`: o `cfr_ci`. `com_reexecucoes`: limite superior, com falhas = `runs_falha` + `runs_flaky_reexecucao` e um run a mais no denominador para cada reexecução (a tentativa com falha que a API não lista). |
+| `descricao` | texto | — | Explicação do cenário. |
+| `falhas`, `runs_validos` | inteiro | runs | Somas de todos os repositórios no cenário. |
+| `cfr_agregado` | real | proporção (0–1) | `falhas` ÷ `runs_validos`. |
+| `q1`, `mediana`, `q3`, `iqr` | real | proporção (0–1) | Do CFR por repositório no cenário (sem os repositórios sem runs válidos). |
+| `diferenca_mediana_pp` | real | pontos percentuais | (`mediana` do cenário − `mediana` de `atual`) × 100. |
+| `parcela_flaky_agregada` | real | proporção (0–1) | (`cfr_agregado` − `cfr_agregado` de `sem_flaky`) ÷ `cfr_agregado`: fração da taxa que vem de flakiness. |
+| `parcela_flaky_mediana` | real | proporção (0–1) | A mesma fração calculada por repositório; mediana entre os repositórios com CFR > 0. |
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`
