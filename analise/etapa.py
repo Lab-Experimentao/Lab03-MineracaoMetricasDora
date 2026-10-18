@@ -11,6 +11,10 @@ Classificação DORA de referência (C1):
 - `classificacao_metricas_usadas.csv`: classe geral por número de dimensões e motivo de faltar a recuperação;
 - `classificacao_sensibilidade.csv`: classe geral com outro arredondamento e com "sem falha" = Elite;
 - `classificacao_limitante.csv`: dimensões abaixo da classe geral.
+
+RQ 05 (velocidade x estabilidade):
+- `rq05_spearman.csv`: ρ de Spearman entre frequência de deploy e CFR (a) e (b);
+- `rq05_dispersao.png`: gráfico de dispersão em escala log.
 """
 
 from __future__ import annotations
@@ -21,6 +25,7 @@ from pathlib import Path
 import pandas as pd
 
 from analise.classificacao import CLASSES, dimensao_limitante, distribuicao, perfil_metricas_usadas, sensibilidade
+from analise.correlacao import grafico_dispersao, spearman
 from analise.descritiva import (
     censura,
     divergencia_lead_time,
@@ -88,3 +93,11 @@ def executar(config: Config) -> None:
         log.info("classificação geral (%s): %s; %d empates; %d mudam de classe", linha.cenario,
                  ", ".join(f"{c} {getattr(linha, c)}" for c in CLASSES), linha.empates, linha.mudam_de_classe)
     _gravar(dimensao_limitante(df), destino / "classificacao_limitante.csv")
+
+    correlacao = spearman(df)
+    _gravar(correlacao, destino / "rq05_spearman.csv")
+    for linha in correlacao.itertuples():
+        log.info("RQ05 %s frequência x %s: rho %.3f, p %.3g, n %d (%d com CFR = 0)",
+                 linha.variante, linha.metrica_cfr, linha.rho, linha.p_valor, linha.n, linha.cfr_zero)
+    grafico_dispersao(df, correlacao, destino / "rq05_dispersao.png")
+    log.info("gravado %s", destino / "rq05_dispersao.png")
