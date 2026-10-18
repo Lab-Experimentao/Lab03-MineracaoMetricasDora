@@ -51,7 +51,8 @@ a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, c
 preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
 classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
 outro (`dados/tipo_projeto.csv`). A de **análise** lê `dados/metricas.csv` e grava as tabelas
-das RQs em `dados/analise/` (por enquanto, a estatística descritiva das RQ 01 a RQ 04).
+das RQs em `dados/analise/` (por enquanto, a estatística descritiva das RQ 01 a RQ 04 e a
+distribuição da classificação DORA de referência).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -563,6 +564,44 @@ que é um limite inferior da quantidade de tentativas escondidas, a mediana sobe
 (+0,63 p.p.) e a taxa agregada vai de 9,31% para 9,69%. Nesse cenário, cerca de 4% da taxa
 agregada (1,9% na mediana por repositório) vem de flakiness. A definição principal fica com o
 `cfr_ci`; o cenário com reexecuções é uma análise de sensibilidade.
+
+## Classificação DORA de referência (`dados/analise/classificacao_*.csv`)
+
+A combinação de referência (C1) usa release como deploy, lead time (a), CFR (a) e tempo de
+recuperação, com os cortes da tabela do enunciado (`metricas/classificacao.py`). A classe
+geral é a mediana das notas (Elite = 4 … Low = 1), arredondada para baixo. As classes são
+calculadas na etapa de métricas, e a etapa `analise` faz as contagens e os cruzamentos.
+
+| Dimensão | Elite | High | Medium | Low | Sem dados |
+|---|---|---|---|---|---|
+| Frequência de deploy | 5 (1,7%) | 57 (19,0%) | 140 (46,7%) | 98 (32,7%) | 0 |
+| Lead time (a) | 73 (24,3%) | 76 (25,3%) | 87 (29,0%) | 64 (21,3%) | 0 |
+| CFR (a) | 239 (79,7%) | 32 (10,7%) | 13 (4,3%) | 16 (5,3%) | 0 |
+| Tempo de recuperação | 102 (34,0%) | 135 (45,0%) | 38 (12,7%) | 8 (2,7%) | 17 |
+| **Geral** | **34 (11,3%)** | **130 (43,3%)** | **113 (37,7%)** | **23 (7,7%)** | 0 |
+
+**O que limita a classe geral.** A frequência de deploy é a dimensão mais fraca: em 166
+repositórios ela fica abaixo da classe geral (32 dos 34 Elite e 84 dos 130 High). O lead time
+vem em seguida (70). CFR e recuperação quase nunca puxam a classe para baixo (13 e 11), pois o
+CFR de CI é Elite em 80% dos repositórios.
+
+**Repositórios sem tempo de recuperação (17).** São classificados com as outras três
+dimensões. Desses, 11 não tiveram nenhuma falha de CI na janela. Os outros 6 falharam só antes
+do primeiro sucesso de cada workflow, então não abriram nenhum episódio.
+
+**Sensibilidade** (`classificacao_sensibilidade.csv`):
+
+| Cenário | Elite | High | Medium | Low | Mudam de classe |
+|---|---|---|---|---|---|
+| Referência (arredondamento para baixo) | 34 | 130 | 113 | 23 | — |
+| Arredondamento para cima | 89 | 145 | 60 | 6 | 142 |
+| Sem falha de CI = Elite em recuperação | 34 | 135 | 109 | 22 | 6 |
+
+Em 142 repositórios (47%), a mediana das quatro notas termina em ,5 (ex.: Elite, Elite, High,
+Medium), e só o critério de arredondamento decide a classe. Arredondar para cima quase triplica
+os Elite. A referência fica com o arredondamento para baixo, o mais conservador, e essa
+escolha entra nas ameaças à validade. Dar Elite em recuperação aos 11 repositórios sem falha
+muda pouco: 6 repositórios sobem uma classe.
 
 ## Dicionário de dados
 

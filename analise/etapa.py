@@ -5,6 +5,12 @@ RQ 01 a RQ 04 (estatística descritiva), em `dados/analise/`:
 - `censura.csv`: episódios de recuperação e releases do CFR (b) censurados pelo fim da janela;
 - `lead_time_divergencia.csv` e `lead_time_divergencia_repositorios.csv`: variante (a) x (b);
 - `cfr_flaky.csv`: CFR de CI com e sem as falhas intermitentes.
+
+Classificação DORA de referência (C1):
+- `classificacao_distribuicao.csv`: repositórios por classe em cada dimensão e na geral;
+- `classificacao_metricas_usadas.csv`: classe geral por número de dimensões e motivo de faltar a recuperação;
+- `classificacao_sensibilidade.csv`: classe geral com outro arredondamento e com "sem falha" = Elite;
+- `classificacao_limitante.csv`: dimensões abaixo da classe geral.
 """
 
 from __future__ import annotations
@@ -14,6 +20,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from analise.classificacao import CLASSES, dimensao_limitante, distribuicao, perfil_metricas_usadas, sensibilidade
 from analise.descritiva import (
     censura,
     divergencia_lead_time,
@@ -69,3 +76,15 @@ def executar(config: Config) -> None:
         log.info("CFR de CI (%s): mediana %.2f%% (%+.2f p.p.), agregado %.2f%%, parcela flaky %.1f%%",
                  linha.cenario, 100 * linha.mediana, linha.diferenca_mediana_pp, 100 * linha.cfr_agregado,
                  100 * linha.parcela_flaky_agregada)
+
+    tabela_distribuicao = distribuicao(df)
+    _gravar(tabela_distribuicao, destino / "classificacao_distribuicao.csv")
+    geral = tabela_distribuicao[tabela_distribuicao["dimensao"] == "geral"].set_index("classe")["repositorios"]
+    log.info("classificação geral (C1): %s", ", ".join(f"{c} {geral[c]}" for c in CLASSES))
+    _gravar(perfil_metricas_usadas(df), destino / "classificacao_metricas_usadas.csv")
+    tabela_sensibilidade = sensibilidade(df)
+    _gravar(tabela_sensibilidade, destino / "classificacao_sensibilidade.csv")
+    for linha in tabela_sensibilidade.itertuples():
+        log.info("classificação geral (%s): %s; %d empates; %d mudam de classe", linha.cenario,
+                 ", ".join(f"{c} {getattr(linha, c)}" for c in CLASSES), linha.empates, linha.mudam_de_classe)
+    _gravar(dimensao_limitante(df), destino / "classificacao_limitante.csv")
