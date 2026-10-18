@@ -15,6 +15,12 @@ Classificação DORA de referência (C1):
 RQ 05 (velocidade x estabilidade):
 - `rq05_spearman.csv`: ρ de Spearman entre frequência de deploy e CFR (a) e (b);
 - `rq05_dispersao.png`: gráfico de dispersão em escala log.
+
+RQ 06 (fatores associados ao desempenho), com o tipo de projeto de `dados/tipo_projeto.csv`:
+- `rq06_testes.csv`: Kruskal-Wallis por fator e métrica, p-valor de Holm e ε²;
+- `rq06_grupos.csv`: mediana e quartis de cada métrica por grupo;
+- `rq06_cliff.csv`: Cliff's delta entre grupos;
+- `rq06_<fator>.png`: boxplots dos fatores com algum teste significativo.
 """
 
 from __future__ import annotations
@@ -26,6 +32,7 @@ import pandas as pd
 
 from analise.classificacao import CLASSES, dimensao_limitante, distribuicao, perfil_metricas_usadas, sensibilidade
 from analise.correlacao import grafico_dispersao, spearman
+from analise.fatores import comparar_grupos, graficos_fatores, grupos_fatores, resumo_grupos, tabela_cliff
 from analise.descritiva import (
     censura,
     divergencia_lead_time,
@@ -38,6 +45,7 @@ from pipeline.config import Config
 log = logging.getLogger(__name__)
 
 ARQUIVO_METRICAS = "metricas.csv"
+ARQUIVO_TIPOS = "tipo_projeto.csv"
 DIR_ANALISE = "analise"
 
 
@@ -101,3 +109,18 @@ def executar(config: Config) -> None:
                  linha.variante, linha.metrica_cfr, linha.rho, linha.p_valor, linha.n, linha.cfr_zero)
     grafico_dispersao(df, correlacao, destino / "rq05_dispersao.png")
     log.info("gravado %s", destino / "rq05_dispersao.png")
+
+    arquivo_tipos = config.saida_dir / ARQUIVO_TIPOS
+    if not arquivo_tipos.is_file():
+        raise FileNotFoundError(f"{arquivo_tipos} não encontrado; rode antes a etapa tipo_projeto")
+    grupos = grupos_fatores(df, pd.read_csv(arquivo_tipos), config.janela.fim_exclusivo_dt)
+    resultado = comparar_grupos(df, grupos)
+    _gravar(resultado, destino / "rq06_testes.csv")
+    _gravar(resumo_grupos(df, grupos), destino / "rq06_grupos.csv")
+    _gravar(tabela_cliff(df, grupos), destino / "rq06_cliff.csv")
+    for linha in resultado[resultado["significativo"]].itertuples():
+        log.info("RQ06 %s x %s: H %.2f, p (Holm) %.3g, ε² %.3f (%s)", linha.fator, linha.metrica,
+                 linha.estatistica, linha.p_holm, linha.epsilon2, linha.efeito)
+    log.info("RQ06: %d de %d testes significativos após Holm", resultado["significativo"].sum(), len(resultado))
+    for caminho in graficos_fatores(df, grupos, resultado, destino):
+        log.info("gravado %s", caminho)

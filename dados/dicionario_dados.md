@@ -475,6 +475,51 @@ uma linha por variante.
 
 `rq05_dispersao.png` mostra os mesmos pares, com os dois eixos em escala log.
 
+### `rq06_testes.csv`
+
+Um teste por fator × métrica (`analise/fatores.py`). Fatores: `linguagem` (5 mais frequentes +
+`outras`), `estrelas`, `contribuidores` e `idade` (quartis `Q1` a `Q4`, `pd.qcut`; idade em anos
+de `criado_em` até o fim da janela) e `tipo_projeto` (de `dados/tipo_projeto.csv`). Métricas:
+`deploys_por_semana`, `lead_time_release_horas`, `cfr_ci` e `recuperacao_horas`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `metrica` | texto | — | Fator e coluna de `metricas.csv`. |
+| `teste` | texto | — | `kruskal-wallis` (3 ou mais grupos) ou `mann-whitney` (2 grupos, bilateral). |
+| `grupos` | inteiro | — | Grupos com algum valor da métrica. |
+| `n` | inteiro | repositórios | Repositórios com a métrica preenchida. |
+| `estatistica` | real | — | H (Kruskal-Wallis) ou U (Mann-Whitney), do `scipy.stats`. |
+| `p_valor` | real | — | Sem correção. |
+| `p_holm` | real | — | Corrigido por Holm sobre os 20 testes (`statsmodels multipletests`). |
+| `significativo` | booleano | — | `p_holm` < 0,05. |
+| `epsilon2` | real | 0 a 1 | H ÷ (n − 1) (Tomczak e Tomczak, 2014); vazio no Mann-Whitney. |
+| `efeito` | texto | — | `desprezível` (< 0,01), `pequeno` (< 0,08), `médio` (< 0,26) ou `grande`. |
+
+### `rq06_grupos.csv`
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `grupo`, `metrica` | texto | — | Grupo do fator e métrica. |
+| `n` | inteiro | repositórios | Repositórios do grupo com a métrica preenchida. |
+| `q1`, `mediana`, `q3` | real | unidade da métrica | `numpy.quantile` (interpolação linear). |
+
+### `rq06_cliff.csv`
+
+Cliff's delta entre grupos: Q4 × Q1 nos fatores em quartis, todos os pares em `linguagem` e
+`tipo_projeto`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `metrica` | texto | — | Fator e métrica. |
+| `grupo_a`, `grupo_b` | texto | — | Grupos comparados. |
+| `n_a`, `n_b` | inteiro | repositórios | Tamanho de cada grupo. |
+| `cliff_delta` | real | −1 a 1 | P(a > b) − P(a < b), sobre todos os pares de repositórios. |
+| `magnitude` | texto | — | Romano et al. (2006): `desprezível` (< 0,147), `pequeno` (< 0,33), `médio` (< 0,474) ou `grande`. |
+| `grupo_melhor` | texto | — | Grupo com melhor desempenho (mais deploys; menos lead time, CFR e recuperação); vazio se o efeito é desprezível. |
+
+`rq06_<fator>.png`: boxplots das quatro métricas por grupo, só para os fatores com algum teste
+significativo (título em negrito nos significativos; escala log, exceto no CFR).
+
 ## Seleção da amostra
 
 ### `dados/candidatos.csv`

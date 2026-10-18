@@ -622,6 +622,42 @@ outra, corretiva, sair em até 7 dias, e quem publica várias releases por seman
 chance de ter uma release logo depois da anterior. Por isso o resultado de (b) não deve ser lido
 como "quem entrega mais rápido quebra mais", e essa limitação entra nas ameaças à validade.
 
+## RQ 06: características associadas ao desempenho (`dados/analise/rq06_*`)
+
+Cinco fatores (`analise/fatores.py`), comparados nas quatro métricas da C1 (frequência de
+deploy, lead time (a), CFR de CI e tempo de recuperação):
+
+| Fator | Grupos |
+|---|---|
+| Linguagem | as 5 mais frequentes (TypeScript, Go, Rust, Python, C++) e `outras` (94) |
+| Estrelas | quartis (cortes em 1.620, 3.310 e 7.660) |
+| Contribuidores | quartis (cortes em 27, 76 e 178) |
+| Idade no fim da janela | quartis (cortes em 1,5, 6,1 e 10,3 anos) |
+| Tipo de projeto | os 4 tipos de `dados/tipo_projeto.csv` (`outro` tem só 10 repositórios) |
+
+Para cada par fator × métrica, o teste é o de Kruskal-Wallis (com 2 grupos seria o de
+Mann-Whitney), e os 20 p-valores são corrigidos juntos pelo método de Holm. O tamanho de efeito
+é o ε² = H ÷ (n − 1), e o Cliff's delta compara Q4 com Q1 nos fatores em quartis e todos os pares
+nos demais. As medianas de cada grupo estão em `rq06_grupos.csv`, e há um boxplot
+(`rq06_<fator>.png`) para cada fator com algum resultado significativo.
+
+Só 3 dos 20 testes ficam significativos depois da correção:
+
+| Fator | Métrica | p (Holm) | ε² | Mediana Q1 → Q4 | Cliff Q4 × Q1 |
+|---|---|---|---|---|---|
+| Idade | Lead time (a) | < 0,001 | 0,120 (médio) | 36 h → 264 h | 0,47 (médio) |
+| Idade | Deploys por semana | 0,002 | 0,071 (pequeno) | 0,61 → 0,27 | −0,45 (médio) |
+| Contribuidores | Lead time (a) | 0,017 | 0,055 (pequeno) | 75 h → 340 h | 0,37 (médio) |
+
+Os repositórios mais novos (até 1,5 ano) publicam releases com mais frequência e com lead time
+bem menor. Nos repositórios com mais contribuidores o lead time também é maior. Os dois fatores
+andam juntos (Spearman 0,57 entre idade e contribuidores), então não dá para separar o efeito de
+cada um só com esses testes. O CFR de CI e o tempo de recuperação não variam com nenhum fator, e
+estrelas e tipo de projeto não aparecem em nenhum resultado significativo. Linguagem chega perto
+no lead time e na recuperação (p sem correção de 0,004 e 0,005), mas não passa pela correção de
+Holm. Mesmo nos resultados significativos o ε² fica entre pequeno e médio: os fatores explicam
+pouco da variação entre os repositórios.
+
 ## Dicionário de dados
 
 Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil, amostra-ouro e análise), com nome,
