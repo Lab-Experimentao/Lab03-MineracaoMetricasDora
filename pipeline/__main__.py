@@ -88,7 +88,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 return 2
         elif etapa == "analise":
             from analise.etapa import executar as executar_analise
-            executar_analise(config)
+            try:
+                executar_analise(config)
+            except FileNotFoundError as erro:
+                log.error("%s", erro)
+                return 2
 
     log.info("pipeline concluído")
     return 0

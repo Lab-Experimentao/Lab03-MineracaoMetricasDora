@@ -50,7 +50,8 @@ O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
 preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
 classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
-outro (`dados/tipo_projeto.csv`). A etapa de análise ainda não está implementada (Sprint 03).
+outro (`dados/tipo_projeto.csv`). A de **análise** lê `dados/metricas.csv` e grava as tabelas
+das RQs em `dados/analise/` (por enquanto, a estatística descritiva das RQ 01 a RQ 04).
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -517,9 +518,55 @@ bibliotecas. Também há casos ambíguos, como motores de jogo e módulos PowerS
 estimativa sem esse viés, o grupo pode rotular uma amostra nova, fora dos 60, e compará-la
 com `tipo_heuristica`.
 
+## Estatística descritiva das RQ 01 a RQ 04 (`dados/analise/`)
+
+A etapa `analise` lê só `dados/metricas.csv` (não precisa de token nem de `dados/brutos/`):
+
+```bash
+python -m pipeline --config config.yaml --etapas analise
+```
+
+Resultado com os 300 repositórios (mediana e IQR entre os repositórios):
+
+| RQ | Métrica | n | Mediana | Q1 – Q3 | IQR |
+|---|---|---|---|---|---|
+| 01 | Deploys por semana | 300 | 0,35 | 0,19 – 0,85 | 0,66 |
+| 02 (a) | Lead time por release (h) | 300 | 174,7 | 24,6 – 595,7 | 571,1 |
+| 02 (b) | Lead time por commit (h) | 300 | 137,9 | 21,3 – 618,0 | 596,7 |
+| 03 (a) | CFR de CI | 300 | 5,98% | 2,55% – 12,84% | 10,30 p.p. |
+| 03 (a) | CFR de CI sem flaky | 300 | 5,98% | 2,55% – 12,84% | 10,30 p.p. |
+| 03 (b) | CFR de entrega | 299 | 37,5% | 16,7% – 69,6% | 52,96 p.p. |
+| 04 | Tempo de recuperação (h) | 283 | 1,97 | 0,55 – 12,21 | 11,66 |
+
+**Censura.** 106 de 13.017 episódios de falha (0,8%, em 60 repositórios) não têm sucesso
+posterior até o fim da janela e ficam fora da mediana da RQ 04. Outros 17 repositórios não têm
+nenhum episódio recuperado, então não têm tempo de recuperação. No CFR (b), 429 de 15.550
+releases (2,8%, em 121 repositórios) saíram nos últimos 7 dias e ficam fora do denominador.
+Como os episódios censurados são os que ainda não terminaram, a mediana da RQ 04 tende a
+subestimar o tempo real, mas com 0,8% de censura o efeito é pequeno.
+
+**Divergência entre as variantes do lead time.** A mediana de (b) é menor que a de (a)
+(137,9 h contra 174,7 h), e (b) fica abaixo de (a) em 193 repositórios. Era o esperado: (a)
+mede cada release a partir do commit **mais antigo**, então em cada release ela é o teto de
+(b). Mesmo assim, (b) passa de (a) em 105 repositórios. Isso acontece porque (b) junta os
+commits de todas as releases e dá a cada uma um peso proporcional ao número de commits, enquanto
+(a) dá o mesmo peso a cada release. Assim, poucas releases grandes e demoradas puxam a mediana
+de (b) para cima. As duas variantes ordenam os repositórios de forma parecida (Spearman 0,72),
+e a razão b/a tem mediana 0,72 (IQR 0,43 – 1,64).
+
+**Flakiness no CFR de CI.** Tirar as falhas seguidas de sucesso no mesmo commit
+(`cfr_ci_sem_flaky`) quase não muda nada: são só 13 de 44.545 falhas, em 10 repositórios, e
+a mediana continua em 5,98%. A maior parte da flakiness não aparece nessa conta. A API lista só
+a última tentativa de cada run, então os 2.021 runs reexecutados que passaram já contam como
+sucesso, e a falha anterior deles não está nos dados. Contando uma falha a mais para cada um, o
+que é um limite inferior da quantidade de tentativas escondidas, a mediana sobe para 6,61%
+(+0,63 p.p.) e a taxa agregada vai de 9,31% para 9,69%. Nesse cenário, cerca de 4% da taxa
+agregada (1,9% na mediana por repositório) vem de flakiness. A definição principal fica com o
+`cfr_ci`; o cenário com reexecuções é uma análise de sensibilidade.
+
 ## Dicionário de dados
 
-Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
+Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil, amostra-ouro e análise), com nome,
 tipo, unidade e fórmula ou origem na API, estão em
 [`dados/dicionario_dados.md`](dados/dicionario_dados.md).
 

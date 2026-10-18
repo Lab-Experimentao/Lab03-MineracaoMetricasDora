@@ -134,6 +134,7 @@ def test_main_le_token_do_env_ao_lado_do_config(tmp_path, dados_config, monkeypa
     monkeypatch.setattr("metricas.etapa.executar", lambda config: None)
     monkeypatch.setattr("validacao.etapa.executar", lambda config: None)
     monkeypatch.setattr("tipo_projeto.etapa.executar", lambda config, obter_token: tokens.append(obter_token()))
+    monkeypatch.setattr("analise.etapa.executar", lambda config: None)
     assert main(["--config", str(_gravar(tmp_path, dados_config))]) == 0
     assert tokens == ["do_arquivo", "do_arquivo"]
 
@@ -141,6 +142,12 @@ def test_main_le_token_do_env_ao_lado_do_config(tmp_path, dados_config, monkeypa
 def test_tipo_projeto_sem_metricas_falha_com_mensagem(tmp_path, dados_config, caplog):
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "tipo_projeto"]) == 2
+    assert "rode antes a etapa de métricas" in caplog.text
+
+
+def test_analise_sem_metricas_falha_com_mensagem(tmp_path, dados_config, caplog):
+    caminho = _gravar(tmp_path, dados_config)
+    assert main(["--config", str(caminho), "--etapas", "analise"]) == 2
     assert "rode antes a etapa de métricas" in caplog.text
 
 
@@ -153,6 +160,7 @@ def test_main_sem_coleta_nao_exige_token(tmp_path, dados_config, monkeypatch):
     monkeypatch.delenv("GITHUB_TOKEN", raising=False)
     # Sem dados da coleta nos testes: a etapa de métricas é substituída.
     monkeypatch.setattr("metricas.etapa.executar", lambda config: None)
+    monkeypatch.setattr("analise.etapa.executar", lambda config: None)
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "metricas", "analise"]) == 0
     assert (tmp_path / "dados").is_dir()

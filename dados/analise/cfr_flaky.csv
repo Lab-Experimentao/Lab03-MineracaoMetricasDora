@@ -1,0 +1,4 @@
+cenario,descricao,falhas,runs_validos,cfr_agregado,q1,mediana,q3,iqr,diferenca_mediana_pp,parcela_flaky_agregada,parcela_flaky_mediana
+sem_flaky,sem as falhas seguidas de sucesso no mesmo commit (cfr_ci_sem_flaky),44532,478574,0.0931,0.0255,0.0598,0.1284,0.1030,0.0000,0.0000,0.0000
+atual,definição principal (cfr_ci),44545,478587,0.0931,0.0255,0.0598,0.1284,0.1030,0.0000,0.0003,0.0000
+com_reexecucoes,"limite superior: cada run reexecutado com sucesso conta mais uma falha (a tentativa anterior, que a API não lista)",46566,480608,0.0969,0.0318,0.0661,0.1382,0.1064,0.6288,0.0396,0.0186
