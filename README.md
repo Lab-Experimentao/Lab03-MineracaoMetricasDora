@@ -46,12 +46,13 @@ Opções:
 | `-v`, `--verbose` | Log detalhado. |
 
 O comando roda as etapas em sequência: a **coleta** grava os dados brutos em
-`dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv`, e
+`dados/brutos/`, a etapa de **métricas** calcula, a partir deles, `dados/metricas.csv` (e
+`dados/metricas_combinacoes.csv`, com as combinações da RQ 07), e
 a de **validação** sorteia a amostra-ouro, gera as planilhas de rotulagem e, com elas
 preenchidas, calcula a concordância e o consenso (`dados/validacao/`). A de **tipo de projeto**
 classifica os 300 repositórios em biblioteca/framework, aplicação/serviço, ferramenta CLI ou
-outro (`dados/tipo_projeto.csv`). A etapa de **análise** grava as tabelas e gráficos das RQs em
-`dados/analise/`; por enquanto, só a RQ 08 (as RQ 01 a 07 são da Sprint 03).
+outro (`dados/tipo_projeto.csv`). A de **análise** lê esses arquivos e grava as tabelas e os
+gráficos das RQ 01 a RQ 07 e da RQ 08 (bônus) em `dados/analise/`.
 
 Se a execução for interrompida (rate limit, queda de rede, `Ctrl+C`), basta rodar o
 mesmo comando de novo: as respostas da API ficam em cache em `cache/api.sqlite`.
@@ -519,6 +520,188 @@ bibliotecas. Também há casos ambíguos, como motores de jogo e módulos PowerS
 estimativa sem esse viés, o grupo pode rotular uma amostra nova, fora dos 60, e compará-la
 com `tipo_heuristica`.
 
+## Estatística descritiva das RQ 01 a RQ 04 (`dados/analise/`)
+
+A etapa `analise` lê só `dados/metricas.csv`, `dados/metricas_combinacoes.csv` e
+`dados/tipo_projeto.csv` (não precisa de token nem de `dados/brutos/`):
+
+```bash
+python -m pipeline --config config.yaml --etapas analise
+```
+
+Resultado com os 300 repositórios (mediana e IQR entre os repositórios):
+
+| RQ | Métrica | n | Mediana | Q1 – Q3 | IQR |
+|---|---|---|---|---|---|
+| 01 | Deploys por semana | 300 | 0,35 | 0,19 – 0,85 | 0,66 |
+| 02 (a) | Lead time por release (h) | 300 | 174,7 | 24,6 – 595,7 | 571,1 |
+| 02 (b) | Lead time por commit (h) | 300 | 137,9 | 21,3 – 618,0 | 596,7 |
+| 03 (a) | CFR de CI | 300 | 5,98% | 2,55% – 12,84% | 10,30 p.p. |
+| 03 (a) | CFR de CI sem flaky | 300 | 5,98% | 2,55% – 12,84% | 10,30 p.p. |
+| 03 (b) | CFR de entrega | 299 | 37,5% | 16,7% – 69,6% | 52,96 p.p. |
+| 04 | Tempo de recuperação (h) | 283 | 1,97 | 0,55 – 12,21 | 11,66 |
+
+**Censura.** 106 de 13.017 episódios de falha (0,8%, em 60 repositórios) não têm sucesso
+posterior até o fim da janela e ficam fora da mediana da RQ 04. Outros 17 repositórios não têm
+nenhum episódio recuperado, então não têm tempo de recuperação. No CFR (b), 429 de 15.550
+releases (2,8%, em 121 repositórios) saíram nos últimos 7 dias e ficam fora do denominador.
+Como os episódios censurados são os que ainda não terminaram, a mediana da RQ 04 tende a
+subestimar o tempo real, mas com 0,8% de censura o efeito é pequeno.
+
+**Divergência entre as variantes do lead time.** A mediana de (b) é menor que a de (a)
+(137,9 h contra 174,7 h), e (b) fica abaixo de (a) em 193 repositórios. Era o esperado: (a)
+mede cada release a partir do commit **mais antigo**, então em cada release ela é o teto de
+(b). Mesmo assim, (b) passa de (a) em 105 repositórios. Isso acontece porque (b) junta os
+commits de todas as releases e dá a cada uma um peso proporcional ao número de commits, enquanto
+(a) dá o mesmo peso a cada release. Assim, poucas releases grandes e demoradas puxam a mediana
+de (b) para cima. As duas variantes ordenam os repositórios de forma parecida (Spearman 0,72),
+e a razão b/a tem mediana 0,72 (IQR 0,43 – 1,64).
+
+**Flakiness no CFR de CI.** Tirar as falhas seguidas de sucesso no mesmo commit
+(`cfr_ci_sem_flaky`) quase não muda nada: são só 13 de 44.545 falhas, em 10 repositórios, e
+a mediana continua em 5,98%. A maior parte da flakiness não aparece nessa conta. A API lista só
+a última tentativa de cada run, então os 2.021 runs reexecutados que passaram já contam como
+sucesso, e a falha anterior deles não está nos dados. Contando uma falha a mais para cada um, o
+que é um limite inferior da quantidade de tentativas escondidas, a mediana sobe para 6,61%
+(+0,63 p.p.) e a taxa agregada vai de 9,31% para 9,69%. Nesse cenário, cerca de 4% da taxa
+agregada (1,9% na mediana por repositório) vem de flakiness. A definição principal fica com o
+`cfr_ci`; o cenário com reexecuções é uma análise de sensibilidade.
+
+## Classificação DORA de referência (`dados/analise/classificacao_*.csv`)
+
+A combinação de referência (C1) usa release como deploy, lead time (a), CFR (a) e tempo de
+recuperação, com os cortes da tabela do enunciado (`metricas/classificacao.py`). A classe
+geral é a mediana das notas (Elite = 4 … Low = 1), arredondada para baixo. As classes são
+calculadas na etapa de métricas, e a etapa `analise` faz as contagens e os cruzamentos.
+
+| Dimensão | Elite | High | Medium | Low | Sem dados |
+|---|---|---|---|---|---|
+| Frequência de deploy | 5 (1,7%) | 57 (19,0%) | 140 (46,7%) | 98 (32,7%) | 0 |
+| Lead time (a) | 73 (24,3%) | 76 (25,3%) | 87 (29,0%) | 64 (21,3%) | 0 |
+| CFR (a) | 239 (79,7%) | 32 (10,7%) | 13 (4,3%) | 16 (5,3%) | 0 |
+| Tempo de recuperação | 102 (34,0%) | 135 (45,0%) | 38 (12,7%) | 8 (2,7%) | 17 |
+| **Geral** | **34 (11,3%)** | **130 (43,3%)** | **113 (37,7%)** | **23 (7,7%)** | 0 |
+
+**O que limita a classe geral.** A frequência de deploy é a dimensão mais fraca: em 166
+repositórios ela fica abaixo da classe geral (32 dos 34 Elite e 84 dos 130 High). O lead time
+vem em seguida (70). CFR e recuperação quase nunca puxam a classe para baixo (13 e 11), pois o
+CFR de CI é Elite em 80% dos repositórios.
+
+**Repositórios sem tempo de recuperação (17).** São classificados com as outras três
+dimensões. Desses, 11 não tiveram nenhuma falha de CI na janela. Os outros 6 falharam só antes
+do primeiro sucesso de cada workflow, então não abriram nenhum episódio.
+
+**Sensibilidade** (`classificacao_sensibilidade.csv`):
+
+| Cenário | Elite | High | Medium | Low | Mudam de classe |
+|---|---|---|---|---|---|
+| Referência (arredondamento para baixo) | 34 | 130 | 113 | 23 | — |
+| Arredondamento para cima | 89 | 145 | 60 | 6 | 142 |
+| Sem falha de CI = Elite em recuperação | 34 | 135 | 109 | 22 | 6 |
+
+Em 142 repositórios (47%), a mediana das quatro notas termina em ,5 (ex.: Elite, Elite, High,
+Medium), e só o critério de arredondamento decide a classe. Arredondar para cima quase triplica
+os Elite. A referência fica com o arredondamento para baixo, o mais conservador, e essa
+escolha entra nas ameaças à validade. Dar Elite em recuperação aos 11 repositórios sem falha
+muda pouco: 6 repositórios sobem uma classe.
+
+## RQ 05: velocidade x estabilidade (`dados/analise/rq05_*`)
+
+Correlação de Spearman entre `deploys_por_semana` e o CFR, separada por variante
+(`analise/correlacao.py`). Entram só os repositórios com os dois valores. O gráfico
+`rq05_dispersao.png` usa escala log nos dois eixos, e os repositórios com CFR igual a 0 ficam
+numa faixa abaixo do menor valor positivo.
+
+| Variante | n | CFR = 0 | ρ | p-valor |
+|---|---|---|---|---|
+| (a) CFR de CI | 300 | 11 | 0,10 | 0,072 |
+| (b) CFR de entrega | 299 | 38 | 0,63 | < 0,001 |
+
+Com o CFR de CI, não há relação: ρ fica perto de zero e não é significativo a 5%. Fazer
+deploy com mais frequência não vem acompanhado de mais falhas no CI. Com o CFR de entrega, a
+correlação é forte e positiva, mas parte dela vem da própria definição: uma release só falha se
+outra, corretiva, sair em até 7 dias, e quem publica várias releases por semana tem muito mais
+chance de ter uma release logo depois da anterior. Por isso o resultado de (b) não deve ser lido
+como "quem entrega mais rápido quebra mais", e essa limitação entra nas ameaças à validade.
+
+## RQ 06: características associadas ao desempenho (`dados/analise/rq06_*`)
+
+Cinco fatores (`analise/fatores.py`), comparados nas quatro métricas da C1 (frequência de
+deploy, lead time (a), CFR de CI e tempo de recuperação):
+
+| Fator | Grupos |
+|---|---|
+| Linguagem | as 5 mais frequentes (TypeScript, Go, Rust, Python, C++) e `outras` (94) |
+| Estrelas | quartis (cortes em 1.620, 3.310 e 7.660) |
+| Contribuidores | quartis (cortes em 27, 76 e 178) |
+| Idade no fim da janela | quartis (cortes em 1,5, 6,1 e 10,3 anos) |
+| Tipo de projeto | os 4 tipos de `dados/tipo_projeto.csv` (`outro` tem só 10 repositórios) |
+
+Para cada par fator × métrica, o teste é o de Kruskal-Wallis (com 2 grupos seria o de
+Mann-Whitney), e os 20 p-valores são corrigidos juntos pelo método de Holm. O tamanho de efeito
+é o ε² = H ÷ (n − 1), e o Cliff's delta compara Q4 com Q1 nos fatores em quartis e todos os pares
+nos demais. As medianas de cada grupo estão em `rq06_grupos.csv`, e há um boxplot
+(`rq06_<fator>.png`) para cada fator com algum resultado significativo.
+
+Só 3 dos 20 testes ficam significativos depois da correção:
+
+| Fator | Métrica | p (Holm) | ε² | Mediana Q1 → Q4 | Cliff Q4 × Q1 |
+|---|---|---|---|---|---|
+| Idade | Lead time (a) | < 0,001 | 0,120 (médio) | 36 h → 264 h | 0,47 (médio) |
+| Idade | Deploys por semana | 0,002 | 0,071 (pequeno) | 0,61 → 0,27 | −0,45 (médio) |
+| Contribuidores | Lead time (a) | 0,017 | 0,055 (pequeno) | 75 h → 340 h | 0,37 (médio) |
+
+Os repositórios mais novos (até 1,5 ano) publicam releases com mais frequência e com lead time
+bem menor. Nos repositórios com mais contribuidores o lead time também é maior. Os dois fatores
+andam juntos (Spearman 0,57 entre idade e contribuidores), então não dá para separar o efeito de
+cada um só com esses testes. O CFR de CI e o tempo de recuperação não variam com nenhum fator, e
+estrelas e tipo de projeto não aparecem em nenhum resultado significativo. Linguagem chega perto
+no lead time e na recuperação (p sem correção de 0,004 e 0,005), mas não passa pela correção de
+Holm. Mesmo nos resultados significativos o ε² fica entre pequeno e médio: os fatores explicam
+pouco da variação entre os repositórios.
+
+## RQ 07: sensibilidade às definições operacionais (`dados/analise/rq07_*`)
+
+A etapa de métricas recalcula as quatro métricas e a classificação em três combinações de
+definições (`metricas/combinacoes.py`) e grava `dados/metricas_combinacoes.csv`. As cadeias de
+pré-releases e de tags já vêm da coleta (`compares.csv`), então nada é coletado de novo. O tempo
+de recuperação vem dos workflow runs e é o mesmo nas três.
+
+| Combinação | Unidade de deploy | Lead time | CFR | Elite | High | Medium | Low |
+|---|---|---|---|---|---|---|---|
+| C1 (referência) | release | (a) | (a) CI | 34 | 130 | 113 | 23 |
+| C2 | release + pré-release | (b) | (b) entrega | 7 | 106 | 157 | 30 |
+| C3 | tag | (b) | (a) CI | 49 | 137 | 98 | 16 |
+
+Para cada par, a etapa `analise` (`analise/combinacoes.py`) conta os repositórios que mudam de
+classe e calcula o kappa de Cohen ponderado (`weights='linear'`), em que uma troca Elite → High
+pesa menos que Elite → Low. A matriz de transição de cada par está em `rq07_transicoes.csv`.
+
+| Par | Mudam de classe | Sobem | Descem | Kappa linear |
+|---|---|---|---|---|
+| C1 × C2 | 136 (45,3%) | 34 | 102 | 0,35 (razoável) |
+| C1 × C3 | 84 (28,0%) | 63 | 21 | 0,66 (substancial) |
+| C2 × C3 | 129 (43,0%) | 123 | 6 | 0,45 (moderada) |
+
+**O que mais muda a classe é o CFR.** Entre C1 e C2, a classe do CFR muda em 77% dos
+repositórios (kappa 0,02): o CFR de entrega tem mediana de 40%, contra 6% do CFR de CI, e 213
+repositórios descem nessa dimensão. Por isso a C2 tem só 7 Elite e é a mais pessimista. A
+segunda maior fonte de mudança é a variante do lead time: (a) e (b) discordam na classe de 46%
+a 49% dos repositórios, e o (b) tende a ser menor, o que faz 92 a 101 repositórios subirem. A
+unidade de deploy pesa pouco: a frequência muda de classe em 10% (C1 × C2) a 18% (C1 × C3) dos
+casos, sempre para cima, porque pré-releases e tags só acrescentam itens. A C3, com tags e lead
+time (b), é a mais otimista (49 Elite).
+
+**Robustez das RQ 01 a 06.** Mesmo no par mais parecido (C1 × C3), mais de um quarto dos
+repositórios troca de classe, e quase todas as mudanças são de uma classe só (4 de 84 mudam duas
+ou mais). Então a forma geral da distribuição se mantém (a maioria fica em High e Medium em
+todas as combinações), mas a classe de um repositório específico depende da definição. As
+conclusões mais sensíveis são as que dependem do CFR: com o CFR de CI quase todo repositório é
+Elite nessa dimensão, e com o de entrega quase nenhum. Isso também aparece na RQ 05, em que só o
+CFR (b) se correlaciona com a frequência. As conclusões da RQ 06 usam as métricas da C1, e as que
+envolvem o lead time (idade e contribuidores) devem ser lidas junto com a diferença de 46% a 49%
+entre as variantes (a) e (b).
+
 ## RQ 08 (bônus): rework rate (`dados/analise/rq08_*`)
 
 Das duas opções do bônus, o grupo escolheu a **rework rate**: a proporção de releases
@@ -573,7 +756,7 @@ dos 68% da mediana. O mesmo viés atinge o CFR (b), que usa a mesma heurística.
 
 ## Dicionário de dados
 
-Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil e amostra-ouro), com nome,
+Todas as colunas dos CSVs gerados (`metricas.csv`, `brutos/`, candidatos, funil, amostra-ouro e análise), com nome,
 tipo, unidade e fórmula ou origem na API, estão em
 [`dados/dicionario_dados.md`](dados/dicionario_dados.md).
 
@@ -586,7 +769,7 @@ metricas/   funções puras de cálculo das métricas DORA
 validacao/  sorteio da amostra-ouro, planilhas de rotulagem, concordância, consenso e
             validação das heurísticas (release corretiva e tipo de projeto)
 tipo_projeto/ etapa que classifica o tipo de projeto dos 300 repositórios
-analise/    análise estatística das RQs (por enquanto, a RQ 08: analise/rq08_rework.py)
+analise/    análise estatística das RQ 01 a RQ 08 (um módulo por análise)
 tests/      testes com pytest
 ```
 

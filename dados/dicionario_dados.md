@@ -59,6 +59,29 @@ como deploy, lead time (a) e CFR (a). O CFR (b) vem em colunas à parte e não e
 | `classe_recuperacao` | texto | Elite/High/Medium/Low | Corte de `recuperacao_horas`: < 1 h Elite; < 1 dia High; < 1 semana Medium; ≥ 1 semana Low. |
 | `classe_geral` | texto | Elite/High/Medium/Low | Notas Elite = 4 … Low = 1 das classes disponíveis; mediana arredondada para baixo. Sem tempo de recuperação, usa as três restantes. |
 
+### `dados/metricas_combinacoes.csv`
+
+Uma linha por repositório e combinação de definições da RQ 07 (`metricas/combinacoes.py`), gerado
+pela etapa de métricas junto com o `metricas.csv`. A linha da C1 repete as classes do
+`metricas.csv`.
+
+| Combinação | Unidade de deploy (cadeia de `compares.csv`) | Lead time | CFR |
+|---|---|---|---|
+| C1 | release (`release`) | (a) por release | (a) CI |
+| C2 | release + pré-release (`release_prerelease`) | (b) por commit | (b) entrega |
+| C3 | tag (`tag`) | (b) por commit | (a) CI |
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorio`, `combinacao` | texto | — | Repositório e `C1`, `C2` ou `C3`. |
+| `unidade_deploy`, `lead_time_variante`, `cfr_variante` | texto | — | Definições da combinação (`a` ou `b`). |
+| `itens_janela` | inteiro | itens | Linhas da cadeia da combinação em `compares.csv` (itens publicados na janela). |
+| `deploys_por_semana` | real | itens/semana | `itens_janela` ÷ semanas da janela. |
+| `lead_time_horas` | real | horas | Lead time (a) ou (b) calculado sobre a cadeia da combinação, como em `metricas.csv`. |
+| `cfr` | real | proporção (0–1) | `cfr_ci` do `metricas.csv` (a) ou CFR de entrega (b) calculado sobre a cadeia da combinação (heurística v3, 7 dias). |
+| `recuperacao_horas` | real | horas | Igual ao `metricas.csv` em todas as combinações. |
+| `classe_frequencia`, `classe_lead_time`, `classe_cfr`, `classe_recuperacao`, `classe_geral` | texto | Elite/High/Medium/Low | Mesmos cortes e mesma regra da classe geral do `metricas.csv`, aplicados aos valores da combinação. |
+
 ## Dados brutos da coleta (`dados/brutos/`)
 
 Regenerados a partir do cache da API a cada execução da etapa de coleta.
@@ -340,7 +363,226 @@ Tipo de projeto dos 300 repositórios, para a RQ 06.
 
 ## Análise (`dados/analise/`)
 
-Gerados por `analise/rq08_rework.py` a partir de `metricas.csv` e `validacao/consenso_releases.csv`.
+Gerados pela etapa `analise` a partir de `metricas.csv` (`analise/descritiva.py`). Reais com 4
+casas decimais. Os quartis usam `Series.quantile` (interpolação linear), e os valores ausentes
+ficam de fora.
+
+### `descritiva_rq01_rq04.csv`
+
+Uma linha por métrica das RQ 01 a RQ 04, resumindo os repositórios.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `rq` | texto | — | `RQ01`, `RQ02 (a)`, `RQ02 (b)`, `RQ03 (a)`, `RQ03 (b)` ou `RQ04`. |
+| `metrica` | texto | — | Coluna de `metricas.csv`: `deploys_por_semana`, `lead_time_release_horas`, `lead_time_commit_horas`, `cfr_ci`, `cfr_ci_sem_flaky`, `cfr_entrega`, `recuperacao_horas`. |
+| `descricao`, `unidade` | texto | — | Nome legível e unidade da métrica. |
+| `n` | inteiro | repositórios | Repositórios com valor. |
+| `ausentes` | inteiro | repositórios | Repositórios com a métrica vazia. |
+| `minimo`, `q1`, `mediana`, `q3`, `maximo`, `media` | real | a da métrica | Estatísticas entre os repositórios. |
+| `iqr` | real | a da métrica | `q3` − `q1`. |
+
+### `censura.csv`
+
+Uma linha para cada métrica com censura à direita: a RQ 04 (episódios) e a RQ 03 (b) (releases).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `rq`, `metrica` | texto | — | `RQ04` / `recuperacao_horas` ou `RQ03 (b)` / `cfr_entrega`. |
+| `unidade` | texto | — | `episódios` ou `releases`. |
+| `observados` | inteiro | a da linha | Soma de `episodios_recuperados` ou de `releases_avaliadas_cfr`. |
+| `censurados` | inteiro | a da linha | Soma de `episodios_censurados` ou de `releases_censuradas_cfr`. |
+| `proporcao_censurados` | real | proporção (0–1) | `censurados` ÷ (`observados` + `censurados`). |
+| `repositorios_com_censura` | inteiro | repositórios | Repositórios com pelo menos um censurado. |
+| `repositorios_sem_valor` | inteiro | repositórios | Repositórios com a métrica vazia. |
+
+### `lead_time_divergencia_repositorios.csv`
+
+Uma linha por repositório com as duas variantes do lead time.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorio`, `lead_time_release_horas`, `lead_time_commit_horas`, `releases_lead_time` | — | — | Iguais a `metricas.csv`. |
+| `diferenca_horas` | real | horas | `lead_time_commit_horas` − `lead_time_release_horas` (b − a). |
+| `razao` | real | — | `lead_time_commit_horas` ÷ `lead_time_release_horas` (b ÷ a); vazio se (a) = 0. |
+
+### `lead_time_divergencia.csv`
+
+Uma linha com o resumo da divergência entre (a) e (b).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `repositorios` | inteiro | repositórios | Repositórios com as duas variantes. |
+| `mediana_a_horas`, `mediana_b_horas` | real | horas | Medianas de (a) e (b) entre os repositórios. |
+| `commit_maior`, `commit_menor`, `iguais` | inteiro | repositórios | Repositórios com (b) > (a), (b) < (a) e (b) = (a). |
+| `mediana_diferenca_horas` | real | horas | Mediana de `diferenca_horas`. |
+| `mediana_razao`, `q1_razao`, `q3_razao` | real | — | Mediana e quartis de `razao`. |
+| `spearman` | real | — | Correlação de Spearman entre (a) e (b). |
+
+### `cfr_flaky.csv`
+
+CFR de CI em três cenários de flakiness, uma linha por cenário.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `cenario` | texto | — | `sem_flaky`: falhas = `runs_falha` − `falhas_flaky_mesmo_commit`. `atual`: o `cfr_ci`. `com_reexecucoes`: limite superior, com falhas = `runs_falha` + `runs_flaky_reexecucao` e um run a mais no denominador para cada reexecução (a tentativa com falha que a API não lista). |
+| `descricao` | texto | — | Explicação do cenário. |
+| `falhas`, `runs_validos` | inteiro | runs | Somas de todos os repositórios no cenário. |
+| `cfr_agregado` | real | proporção (0–1) | `falhas` ÷ `runs_validos`. |
+| `q1`, `mediana`, `q3`, `iqr` | real | proporção (0–1) | Do CFR por repositório no cenário (sem os repositórios sem runs válidos). |
+| `diferenca_mediana_pp` | real | pontos percentuais | (`mediana` do cenário − `mediana` de `atual`) × 100. |
+| `parcela_flaky_agregada` | real | proporção (0–1) | (`cfr_agregado` − `cfr_agregado` de `sem_flaky`) ÷ `cfr_agregado`: fração da taxa que vem de flakiness. |
+| `parcela_flaky_mediana` | real | proporção (0–1) | A mesma fração calculada por repositório; mediana entre os repositórios com CFR > 0. |
+
+### `classificacao_distribuicao.csv`
+
+Distribuição da classificação DORA de referência (C1), em formato longo: uma linha por
+dimensão × classe (`analise/classificacao.py`).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `dimensao` | texto | — | `frequencia`, `lead_time`, `cfr`, `recuperacao` (colunas `classe_*` de `metricas.csv`) ou `geral` (`classe_geral`). |
+| `classe` | texto | — | `Elite`, `High`, `Medium`, `Low` ou `sem dados` (classe vazia). |
+| `repositorios` | inteiro | repositórios | Repositórios na classe. |
+| `proporcao` | real | proporção (0–1) | `repositorios` ÷ total da amostra. |
+
+### `classificacao_metricas_usadas.csv`
+
+Classe geral pelo número de dimensões que entraram na mediana e pelo motivo de faltar o tempo
+de recuperação. Só aparecem as combinações com algum repositório.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `situacao_recuperacao` | texto | — | `com recuperação`; `sem falha de CI` (`runs_falha = 0`); `só episódios censurados` (nenhum episódio recuperado, algum censurado); `falhas só antes do primeiro sucesso` (as falhas não abriram episódio). |
+| `metricas_usadas` | inteiro | dimensões | Dimensões com classe (4, ou 3 sem recuperação). |
+| `Elite`, `High`, `Medium`, `Low` | inteiro | repositórios | Repositórios em cada classe geral. |
+| `repositorios` | inteiro | repositórios | Total da linha. |
+
+### `classificacao_sensibilidade.csv`
+
+Classe geral recalculada (`metricas.classificacao.categoria_geral`) em cenários alternativos.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `cenario` | texto | — | `referencia` (C1, igual a `classe_geral`); `arredondamento_para_cima` (medianas terminadas em ,5 vão para a classe de cima); `sem_falha_como_elite` (repositórios com `runs_falha = 0` recebem Elite em recuperação). |
+| `descricao` | texto | — | Explicação do cenário. |
+| `Elite`, `High`, `Medium`, `Low` | inteiro | repositórios | Repositórios em cada classe geral. |
+| `sem_dados` | inteiro | repositórios | Repositórios sem nenhuma dimensão com classe. |
+| `empates` | inteiro | repositórios | Repositórios cuja mediana das notas termina em ,5: o arredondamento decide a classe. |
+| `mudam_de_classe` | inteiro | repositórios | Repositórios com classe geral diferente da `referencia`. |
+
+### `classificacao_limitante.csv`
+
+Uma linha por classe geral, mais `todas`: quantos repositórios têm cada dimensão com classe
+abaixo da geral (o que puxa a classificação para baixo).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `classe_geral` | texto | — | `Elite`, `High`, `Medium`, `Low` ou `todas`. |
+| `repositorios` | inteiro | repositórios | Repositórios na classe. |
+| `frequencia_abaixo`, `lead_time_abaixo`, `cfr_abaixo`, `recuperacao_abaixo` | inteiro | repositórios | Repositórios em que a dimensão tem nota menor que a classe geral. |
+
+### `rq05_spearman.csv`
+
+Correlação de Spearman entre `deploys_por_semana` e cada variante do CFR (`analise/correlacao.py`),
+uma linha por variante.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `variante` | texto | — | `(a)` ou `(b)`. |
+| `metrica_cfr` | texto | — | `cfr_ci` (a) ou `cfr_entrega` (b). |
+| `descricao` | texto | — | Nome da variante. |
+| `n` | inteiro | repositórios | Repositórios com frequência e CFR preenchidos. |
+| `sem_par` | inteiro | repositórios | Repositórios sem o CFR da variante, fora do cálculo. |
+| `cfr_zero` | inteiro | repositórios | Repositórios com CFR igual a 0 (no gráfico, ficam na faixa de baixo). |
+| `rho` | real | −1 a 1 | `scipy.stats.spearmanr`, com postos médios nos empates. |
+| `p_valor` | real | — | Bilateral, de `spearmanr`. |
+
+`rq05_dispersao.png` mostra os mesmos pares, com os dois eixos em escala log.
+
+### `rq06_testes.csv`
+
+Um teste por fator × métrica (`analise/fatores.py`). Fatores: `linguagem` (5 mais frequentes +
+`outras`), `estrelas`, `contribuidores` e `idade` (quartis `Q1` a `Q4`, `pd.qcut`; idade em anos
+de `criado_em` até o fim da janela) e `tipo_projeto` (de `dados/tipo_projeto.csv`). Métricas:
+`deploys_por_semana`, `lead_time_release_horas`, `cfr_ci` e `recuperacao_horas`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `metrica` | texto | — | Fator e coluna de `metricas.csv`. |
+| `teste` | texto | — | `kruskal-wallis` (3 ou mais grupos) ou `mann-whitney` (2 grupos, bilateral). |
+| `grupos` | inteiro | — | Grupos com algum valor da métrica. |
+| `n` | inteiro | repositórios | Repositórios com a métrica preenchida. |
+| `estatistica` | real | — | H (Kruskal-Wallis) ou U (Mann-Whitney), do `scipy.stats`. |
+| `p_valor` | real | — | Sem correção. |
+| `p_holm` | real | — | Corrigido por Holm sobre os 20 testes (`statsmodels multipletests`). |
+| `significativo` | booleano | — | `p_holm` < 0,05. |
+| `epsilon2` | real | 0 a 1 | H ÷ (n − 1) (Tomczak e Tomczak, 2014); vazio no Mann-Whitney. |
+| `efeito` | texto | — | `desprezível` (< 0,01), `pequeno` (< 0,08), `médio` (< 0,26) ou `grande`. |
+
+### `rq06_grupos.csv`
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `grupo`, `metrica` | texto | — | Grupo do fator e métrica. |
+| `n` | inteiro | repositórios | Repositórios do grupo com a métrica preenchida. |
+| `q1`, `mediana`, `q3` | real | unidade da métrica | `numpy.quantile` (interpolação linear). |
+
+### `rq06_cliff.csv`
+
+Cliff's delta entre grupos: Q4 × Q1 nos fatores em quartis, todos os pares em `linguagem` e
+`tipo_projeto`.
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fator`, `metrica` | texto | — | Fator e métrica. |
+| `grupo_a`, `grupo_b` | texto | — | Grupos comparados. |
+| `n_a`, `n_b` | inteiro | repositórios | Tamanho de cada grupo. |
+| `cliff_delta` | real | −1 a 1 | P(a > b) − P(a < b), sobre todos os pares de repositórios. |
+| `magnitude` | texto | — | Romano et al. (2006): `desprezível` (< 0,147), `pequeno` (< 0,33), `médio` (< 0,474) ou `grande`. |
+| `grupo_melhor` | texto | — | Grupo com melhor desempenho (mais deploys; menos lead time, CFR e recuperação); vazio se o efeito é desprezível. |
+
+`rq06_<fator>.png`: boxplots das quatro métricas por grupo, só para os fatores com algum teste
+significativo (título em negrito nos significativos; escala log, exceto no CFR).
+
+### `rq07_distribuicao.csv`
+
+Classe geral em cada combinação de `metricas_combinacoes.csv` (`analise/combinacoes.py`).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `combinacao`, `unidade_deploy`, `lead_time_variante`, `cfr_variante` | texto | — | Definições da combinação. |
+| `Elite`, `High`, `Medium`, `Low`, `sem_dados` | inteiro | repositórios | Repositórios em cada classe geral. |
+
+### `rq07_concordancia.csv`
+
+Uma linha por par de combinações (C1xC2, C1xC3, C2xC3) e dimensão (`geral`, `frequencia`,
+`lead_time`, `cfr`; a recuperação é igual nas três e fica de fora).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `par`, `combinacao_a`, `combinacao_b`, `dimensao` | texto | — | Par e dimensão comparados. |
+| `repositorios` | inteiro | repositórios | Com classe nas duas combinações. |
+| `sem_classe` | inteiro | repositórios | Sem classe em alguma das duas (ex.: sem CFR (b)); fora do cálculo. |
+| `mudam` | inteiro | repositórios | Classe diferente entre A e B. |
+| `proporcao_mudam` | real | proporção (0–1) | `mudam` ÷ `repositorios`. |
+| `sobem`, `descem` | inteiro | repositórios | Classe melhor / pior em B do que em A. |
+| `mudam_duas_ou_mais` | inteiro | repositórios | Mudam duas classes ou mais (ex.: Elite → Medium). |
+| `kappa_linear` | real | −1 a 1 | `sklearn.metrics.cohen_kappa_score(..., weights="linear")`, classes ordenadas de Low a Elite. 1 quando as duas classificações são idênticas. |
+| `interpretacao` | texto | — | Escala de Landis e Koch (1977), a mesma de `concordancia.csv`. |
+
+### `rq07_transicoes.csv`
+
+Matriz de transição da classe geral, uma por par (4 linhas cada).
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `par` | texto | — | Par de combinações (A x B). |
+| `classe_a` | texto | — | Classe em A. |
+| `para_Elite`, `para_High`, `para_Medium`, `para_Low` | inteiro | repositórios | Repositórios com `classe_a` em A e essa classe em B. |
+| `repositorios` | inteiro | repositórios | Total da linha. |
+
+Os arquivos da RQ 08 (bônus) são gerados por `analise/rq08_rework.py`, a partir de `metricas.csv`
+e `validacao/consenso_releases.csv`.
 
 ### `rq08_resumo.csv`
 

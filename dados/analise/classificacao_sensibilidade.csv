@@ -1,0 +1,4 @@
+cenario,descricao,Elite,High,Medium,Low,sem_dados,empates,mudam_de_classe
+referencia,"C1: mediana das notas arredondada para baixo; sem recuperação, usa as demais",34,130,113,23,0,142,0
+arredondamento_para_cima,"medianas terminadas em ,5 arredondadas para cima",89,145,60,6,0,142,142
+sem_falha_como_elite,repositórios sem nenhuma falha de CI recebem Elite em recuperação,34,135,109,22,0,145,6

@@ -1,0 +1,4 @@
+situacao_recuperacao,metricas_usadas,Elite,High,Medium,Low,repositorios
+com recuperação,4,31,124,107,21,283
+sem falha de CI,3,3,2,5,1,11
+falhas só antes do primeiro sucesso,3,0,4,1,1,6
