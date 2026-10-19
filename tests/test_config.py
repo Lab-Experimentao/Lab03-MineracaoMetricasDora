@@ -176,3 +176,9 @@ def test_validacao_sem_dados_falha_com_mensagem(tmp_path, dados_config, caplog):
     caminho = _gravar(tmp_path, dados_config)
     assert main(["--config", str(caminho), "--etapas", "validacao"]) == 2
     assert "rode antes as etapas de coleta e métricas" in caplog.text
+
+
+def test_analise_sem_metricas_falha_com_mensagem(tmp_path, dados_config, caplog):
+    caminho = _gravar(tmp_path, dados_config)
+    assert main(["--config", str(caminho), "--etapas", "analise"]) == 2
+    assert "metricas.csv" in caplog.text

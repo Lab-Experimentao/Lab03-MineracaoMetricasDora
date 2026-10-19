@@ -26,6 +26,9 @@ RQ 07 (sensibilidade às definições), a partir de `dados/metricas_combinacoes.
 - `rq07_distribuicao.csv`: classe geral em cada combinação (C1, C2, C3);
 - `rq07_concordancia.csv`: % que muda de classe e kappa de Cohen ponderado por par e dimensão;
 - `rq07_transicoes.csv`: matriz de transição da classe geral por par.
+
+RQ 08 (bônus: rework rate x CFR (b)), em `analise/rq08_rework.py`:
+- `rq08_resumo.csv`, `rq08_comparacao.csv`, `rq08_amostra_ouro.csv` e `rq08_rework_vs_cfr.png`.
 """
 
 from __future__ import annotations
@@ -35,6 +38,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from analise import rq08_rework
 from analise.classificacao import CLASSES, dimensao_limitante, distribuicao, perfil_metricas_usadas, sensibilidade
 from analise.combinacoes import concordancia_pares, distribuicao as distribuicao_combinacoes, transicoes
 from analise.correlacao import grafico_dispersao, spearman
@@ -146,3 +150,5 @@ def executar(config: Config) -> None:
         log.info("RQ07 %s: %d de %d mudam de classe (%.1f%%), kappa linear %.3f (%s)", linha.par, linha.mudam,
                  linha.repositorios, 100 * linha.proporcao_mudam, linha.kappa_linear, linha.interpretacao)
     _gravar(transicoes(por_combinacao), destino / "rq07_transicoes.csv")
+
+    rq08_rework.executar(config)

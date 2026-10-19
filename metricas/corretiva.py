@@ -132,6 +132,15 @@ class CFREntrega:
     censuradas: int
     corretivas: int  # releases que a heurística marcou como corretivas (base da RQ 08)
 
+    @property
+    def rework_rate(self) -> float | None:
+        """RQ 08: releases corretivas ÷ todas as releases da janela.
+
+        Sem censura: ser corretiva depende só da própria release, não do que vem depois.
+        """
+        total = self.avaliadas + self.censuradas
+        return self.corretivas / total if total else None
+
 
 def cfr_entrega(
     releases: Sequence[ReleaseAvaliada],

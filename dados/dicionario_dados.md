@@ -47,7 +47,8 @@ como deploy, lead time (a) e CFR (a). O CFR (b) vem em colunas à parte e não e
 | `releases_falharam` | inteiro | releases | Releases seguidas, em até 7 dias (`metricas.janela_release_corretiva_dias`), por alguma release corretiva. |
 | `releases_avaliadas_cfr` | inteiro | releases | Releases da janela publicadas antes dos últimos 7 dias (denominador do CFR (b)). |
 | `releases_censuradas_cfr` | inteiro | releases | Releases publicadas nos últimos 7 dias da janela: ainda não se sabe se haverá correção; fora do denominador. |
-| `releases_corretivas` | inteiro | releases | Releases que a heurística atual (v3: a própria versão é um patch, X.Y.Z com Z > 0) marcou como corretivas. Base para a rework rate (RQ 08). |
+| `releases_corretivas` | inteiro | releases | Releases que a heurística atual (v3: a própria versão é um patch, X.Y.Z com Z > 0) marcou como corretivas. |
+| `rework_rate` | real | proporção (0–1) | RQ 08: `releases_corretivas` ÷ `releases_janela`. Inclui as releases censuradas no CFR (b). Vazio se não há releases. |
 | `recuperacao_horas` | real | horas | RQ 04: mediana dos episódios recuperados de todos os workflows. Episódio: da primeira falha após um sucesso (`run_started_at`, ou `created_at` se ausente) ao próximo sucesso do mesmo `workflow_id` (`updated_at`). Vazio se não há episódio recuperado. |
 | `episodios_recuperados` | inteiro | episódios | Episódios de falha encerrados por um sucesso dentro da janela. |
 | `episodios_censurados` | inteiro | episódios | Episódios sem sucesso posterior até o fim da janela (censura). |
@@ -579,6 +580,33 @@ Matriz de transição da classe geral, uma por par (4 linhas cada).
 | `classe_a` | texto | — | Classe em A. |
 | `para_Elite`, `para_High`, `para_Medium`, `para_Low` | inteiro | repositórios | Repositórios com `classe_a` em A e essa classe em B. |
 | `repositorios` | inteiro | repositórios | Total da linha. |
+
+Os arquivos da RQ 08 (bônus) são gerados por `analise/rq08_rework.py`, a partir de `metricas.csv`
+e `validacao/consenso_releases.csv`.
+
+### `rq08_resumo.csv`
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `metrica` | texto | — | `Rework rate` (`rework_rate`) ou `CFR (b)` (`cfr_entrega`). |
+| `n` | inteiro | repositórios | Repositórios com valor na métrica. |
+| `mediana`, `q1`, `q3`, `iqr`, `minimo`, `maximo` | real | proporção (0–1) | Mediana, 1º e 3º quartis, `q3 − q1`, mínimo e máximo entre os repositórios. |
+
+### `rq08_comparacao.csv`
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `medida` | texto | — | Nome da medida, sobre os repositórios com as duas métricas. |
+| `valor` | real | — | Spearman ρ e p-valor (`scipy.stats.spearmanr`); estatística e p-valor do Wilcoxon pareado (`scipy.stats.wilcoxon`); mediana de `rework_rate − cfr_entrega`; nº de repositórios com rework maior, igual e menor que o CFR (b). |
+
+### `rq08_amostra_ouro.csv`
+
+| Coluna | Tipo | Unidade | Fórmula / origem |
+|---|---|---|---|
+| `fonte` | texto | — | `consenso dos avaliadores` ou `heurística <versão>`. |
+| `releases` | inteiro | releases | Releases rotuladas com consenso. |
+| `corretivas` | inteiro | releases | Corretivas segundo a fonte. |
+| `proporcao` | real | proporção (0–1) | `corretivas ÷ releases`. |
 
 ## Seleção da amostra
 
